@@ -28,6 +28,15 @@ def index():
                            hourly_fig=hourly_fig.to_html(full_html=False),
                            daily_fig=daily_fig.to_html(full_html=False))
 
+@app.route("/sleep")
+def sleep():
+    daily_sleep = pd.read_csv('data/fitbit_apr/sleepDay_merged.csv')
+    daily_sleep = daily_sleep.rename(columns={'SleepDay': 'Date', 'TotalMinutesAsleep': 'Total Minutes Asleep'})
+    daily_sleep.Date = pd.to_datetime(daily_sleep.Date)
+    sleep = daily_sleep.loc[(daily_sleep.Id == daily_sleep.Id.unique()[0]) & (daily_sleep.Date < '2016-04-19')]
+    fig = px.bar(sleep, x='Date', y='Total Minutes Asleep')
+    return render_template("sleep.html", fig=fig.to_html(full_html=False))
+
 @app.route("/heart-rate")
 def heart_rate():
     data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
