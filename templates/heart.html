@@ -1,9 +1,11 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Steps
+    Heart Rate
 {% endblock %}
 
 {% block main %}
-    {{ fig|safe }}
+    {% for table in tables %}
+        {{ table|safe }}
+    {% endfor %}
 {% endblock %}
