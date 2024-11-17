@@ -13,12 +13,20 @@ Session(app)
 
 @app.route("/")
 def index():
-    data = pd.read_csv('data/fitbit_apr/hourlySteps_merged.csv')
-    data = data.rename(columns={'ActivityHour': 'Hour', 'StepTotal': 'Steps'})
-    data.Hour = pd.to_datetime(data.Hour)
-    steps = data.loc[(data.Id == data.Id.unique()[0]) & (data.Hour < '2016-04-13')]
-    fig = px.bar(steps, x='Hour', y='Steps')
-    return render_template("index.html", fig=fig.to_html(full_html=False))
+    hourly_steps = pd.read_csv('data/fitbit_apr/hourlySteps_merged.csv')
+    hourly_steps = hourly_steps.rename(columns={'ActivityHour': 'Hour', 'StepTotal': 'Steps'})
+    hourly_steps.Hour = pd.to_datetime(hourly_steps.Hour)
+    hourly = hourly_steps.loc[(hourly_steps.Id == hourly_steps.Id.unique()[0]) & (hourly_steps.Hour < '2016-04-13')]
+    hourly_fig = px.bar(hourly, x='Hour', y='Steps')
+
+    daily_steps = pd.read_csv('data/fitbit_apr/dailySteps_merged.csv')
+    daily_steps = daily_steps.rename(columns={'ActivityDay': 'Date', 'StepTotal': 'Steps'})
+    daily_steps.Date = pd.to_datetime(daily_steps.Date)
+    daily = daily_steps.loc[(daily_steps.Id == daily_steps.Id.unique()[0]) & (daily_steps.Date < '2016-04-19')]
+    daily_fig = px.bar(daily, x='Date', y='Steps')
+    return render_template("index.html", 
+                           hourly_fig=hourly_fig.to_html(full_html=False),
+                           daily_fig=daily_fig.to_html(full_html=False))
 
 @app.route("/heart-rate")
 def heart_rate():
