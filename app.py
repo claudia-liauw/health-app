@@ -41,20 +41,23 @@ def sleep():
     fig = px.bar(sleep, x='Date', y='Total Minutes Asleep')
     return render_template("sleep.html", fig=fig.to_html(full_html=False))
 
-@app.route("/heart-rate")
+@app.route("/heart-rate", methods=["GET", "POST"])
 def heart_rate():
-    data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
-    data.Time = pd.to_datetime(data.Time)
-    hr = data.loc[(data.Id == data.Id.unique()[0]) & (data.Time < '2016-04-20')]
+    if request.method == "POST":
+        data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
+        data.Time = pd.to_datetime(data.Time)
+        hr = data.loc[(data.Id == data.Id.unique()[0]) & (data.Time < '2016-04-20')]
 
-    from momentfm import MOMENTPipeline
-    model = MOMENTPipeline.from_pretrained(
-        "AutonLab/MOMENT-1-large", 
-        model_kwargs={"task_name": "reconstruction"},  # For anomaly detection, we will load MOMENT in `reconstruction` mode
-        local_files_only=True,  # Whether or not to only look at local files (i.e., do not try to download the model).
-    )
-    anomalies = get_anomalies(hr, model).reset_index(drop=True)
-    return render_template("heart.html", tables=[anomalies.to_html(classes='data', header='true')])
+        from momentfm import MOMENTPipeline
+        model = MOMENTPipeline.from_pretrained(
+            "AutonLab/MOMENT-1-large", 
+            model_kwargs={"task_name": "reconstruction"},  # For anomaly detection, we will load MOMENT in `reconstruction` mode
+            local_files_only=True,  # Whether or not to only look at local files (i.e., do not try to download the model).
+        )
+        anomalies = get_anomalies(hr, model).reset_index(drop=True)
+        return render_template("heart.html", tables=[anomalies.to_html(classes='data', header='true')])
+    else:
+        return render_template("heart.html", tables=None)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():

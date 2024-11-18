@@ -5,7 +5,13 @@
 {% endblock %}
 
 {% block main %}
-    {% for table in tables %}
-        {{ table|safe }}
-    {% endfor %}
+    <p>Resting heart rate goes here</p>
+    <form action="/heart-rate" method="post">
+        <button class="btn btn-primary" type="submit">Generate Anomaly Report</button>
+    </form>
+    {% if tables %}
+        {% for table in tables %}
+            {{ table|safe }}
+        {% endfor %}
+    {% endif %}
 {% endblock %}
