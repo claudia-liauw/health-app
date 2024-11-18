@@ -1,8 +1,10 @@
-from flask import Flask, request, render_template, session
+from flask import Flask, request, render_template, session, redirect
 from flask_session import Session
 import pandas as pd
 import plotly.express as px
 from src.utils import get_anomalies
+from werkzeug.security import check_password_hash, generate_password_hash
+import sqlite3
 
 app = Flask(__name__)
 
@@ -51,3 +53,37 @@ def heart_rate():
     )
     anomalies = get_anomalies(hr, model).reset_index(drop=True)
     return render_template("heart.html", tables=[anomalies.to_html(classes='data', header='true')])
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Register user"""
+    if request.method == "POST":
+        with sqlite3.connect("data/users.db") as db:
+            username = request.form['username']
+            password = request.form['password']
+            confirmation = request.form['confirmation']
+
+            # Ensure username is submitted
+            # if not username:
+            #     return apology("must provide username")
+
+            # # Ensure password is submitted
+            # elif not password:
+            #     return apology("must provide password")
+
+            # # Ensure passwords match
+            # elif password != confirmation:
+            #     return apology("passwords do not match")
+
+            hash = generate_password_hash(password)
+            try:
+                db.executemany("INSERT INTO users (username, hash) VALUES (?, ?)", [(username, hash)])
+                db.commit()
+                return redirect("/")
+            # If username already exists
+            except ValueError:
+                pass
+                # return apology("username already exists")
+
+    else:
+        return render_template("register.html")
