@@ -60,32 +60,31 @@ def heart_rate():
 def register():
     """Register user"""
     if request.method == "POST":
+        username = request.form['username']
+        password = request.form['password']
+        confirmation = request.form['confirmation']
+
+        # Ensure username is submitted
+        if not username:
+            return render_template("register.html", invalid="Must provide username!")
+
+        # Ensure password is submitted
+        elif not password:
+            return render_template("register.html", invalid="Must provide password!")
+
+        # Ensure passwords match
+        elif password != confirmation:
+            return render_template("register.html", invalid="Passwords do not match!")
+
+        hash = generate_password_hash(password)
         with sqlite3.connect(db_path) as db:
-            username = request.form['username']
-            password = request.form['password']
-            confirmation = request.form['confirmation']
-
-            # Ensure username is submitted
-            # if not username:
-            #     return apology("must provide username")
-
-            # # Ensure password is submitted
-            # elif not password:
-            #     return apology("must provide password")
-
-            # # Ensure passwords match
-            # elif password != confirmation:
-            #     return apology("passwords do not match")
-
-            hash = generate_password_hash(password)
             try:
                 db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash))
                 db.commit()
                 return redirect("/")
             # If username already exists
-            except ValueError:
-                pass
-                # return apology("username already exists")
+            except:
+                return render_template("register.html", invalid="Username already exists!")
 
     else:
         return render_template("register.html")
