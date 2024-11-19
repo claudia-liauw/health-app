@@ -140,3 +140,29 @@ def logout():
 
     # Redirect user to login form
     return redirect("/")
+
+@app.route("/profile", methods=["GET", "POST"])
+def profile():
+    if request.method == "POST":
+        pass
+    else:
+        username = session['user_id']
+        with sqlite3.connect("data/users.db") as db:
+            step_goal = db.execute(
+                "SELECT step_goal FROM goals WHERE username = ?", (username,)
+            ).fetchall()
+            sleep_goal = db.execute(
+                "SELECT sleep_goal FROM goals WHERE username = ?", (username,)
+            ).fetchall()
+
+        if len(step_goal) != 1:
+            step_goal = 0
+        else:
+            step_goal = step_goal[0][0]
+
+        if len(sleep_goal) != 1:
+            sleep_goal = 0
+        else:
+            sleep_goal = sleep_goal[0][0]
+
+        return render_template("profile.html", username=username, step_goal=step_goal, sleep_goal=sleep_goal)

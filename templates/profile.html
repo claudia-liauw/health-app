@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Profile
+{% endblock %}
+
+{% block main %}
+    <p>Hello, {{ username }}</p>
+    <p>Step goal: {{ step_goal }} steps</p>
+    <p>Sleep goal: {{ sleep_goal }} h</p>
+    <form action="/profile" method="post">
+        <button class="btn btn-primary" type="submit">Edit Goals</button>
+    </form>
+{% endblock %}
