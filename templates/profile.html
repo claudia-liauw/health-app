@@ -6,9 +6,15 @@
 
 {% block main %}
     <p>Hello, {{ username }}</p>
-    <p>Step goal: {{ step_goal }} steps</p>
-    <p>Sleep goal: {{ sleep_goal }} h</p>
     <form action="/profile" method="post">
-        <button class="btn btn-primary" type="submit">Edit Goals</button>
+        <p>Step Goal</p>
+        <div class="mb-3">
+            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="step" placeholder="{{ step_goal }}" type="number">
+        </div>
+        <p>Sleep Goal</p>
+        <div class="mb-3">
+            <input class="form-control mx-auto w-auto" name="sleep" placeholder="{{ sleep_goal }}" type="number">
+        </div>
+        <button class="btn btn-primary" type="submit">Save</button>
     </form>
 {% endblock %}

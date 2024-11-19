@@ -83,6 +83,7 @@ def register():
         with sqlite3.connect(db_path) as db:
             try:
                 db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash))
+                db.execute("INSERT INTO goals (username, step_goal, sleep_goal) VALUES (?, 'Create one', 'Create one')", (username,))
                 db.commit()
                 return redirect("/")
             # If username already exists
@@ -143,26 +144,26 @@ def logout():
 
 @app.route("/profile", methods=["GET", "POST"])
 def profile():
+    username = session['user_id']
+    with sqlite3.connect("data/users.db") as db:
+        rows = db.execute(
+            "SELECT * FROM goals WHERE username = ?", (username,)
+        ).fetchall()
+
+        ori_step_goal = rows[0][1]
+        ori_sleep_goal = rows[0][2]
+    
     if request.method == "POST":
-        pass
+        step_goal = request.form['step']
+        # if empty, set to existing data
+        step_goal = step_goal if step_goal else ori_step_goal
+        sleep_goal = request.form['sleep']
+        sleep_goal = sleep_goal if sleep_goal else ori_sleep_goal
+
+        with sqlite3.connect(db_path) as db:
+            db.execute("UPDATE goals SET step_goal = ?, sleep_goal = ? WHERE username = ?", 
+                       (step_goal, sleep_goal, username))
+            db.commit()
+        return redirect("/profile")
     else:
-        username = session['user_id']
-        with sqlite3.connect("data/users.db") as db:
-            step_goal = db.execute(
-                "SELECT step_goal FROM goals WHERE username = ?", (username,)
-            ).fetchall()
-            sleep_goal = db.execute(
-                "SELECT sleep_goal FROM goals WHERE username = ?", (username,)
-            ).fetchall()
-
-        if len(step_goal) != 1:
-            step_goal = 0
-        else:
-            step_goal = step_goal[0][0]
-
-        if len(sleep_goal) != 1:
-            sleep_goal = 0
-        else:
-            sleep_goal = sleep_goal[0][0]
-
-        return render_template("profile.html", username=username, step_goal=step_goal, sleep_goal=sleep_goal)
+        return render_template("profile.html", username=username, step_goal=ori_step_goal, sleep_goal=ori_sleep_goal)
