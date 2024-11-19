@@ -5,6 +5,8 @@
 {% endblock %}
 
 {% block main %}
+    <p>Today's Steps: {{ steps }}</p>
+    {{ target|safe }}
     {{ hourly_fig|safe }}
     {{ daily_fig|safe }}
 {% endblock %}

@@ -17,6 +17,21 @@ db_path = "data/users.db"
 
 @app.route("/")
 def index():
+    steps = 2000
+
+    # check if target is met
+    with sqlite3.connect("data/users.db") as db:
+        step_goal = db.execute(
+            "SELECT step_goal FROM goals WHERE username = ?", (session['user_id'],)
+        ).fetchall()
+    step_goal = step_goal[0][0]
+    if step_goal == 'Create one':
+        target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
+    elif steps >= int(step_goal):
+        target = '<p>Target reached!</p>'
+    else:
+        target = '<p>Target not yet reached.</p>'
+
     hourly_steps = pd.read_csv('data/fitbit_apr/hourlySteps_merged.csv')
     hourly_steps = hourly_steps.rename(columns={'ActivityHour': 'Hour', 'StepTotal': 'Steps'})
     hourly_steps.Hour = pd.to_datetime(hourly_steps.Hour)
@@ -28,7 +43,9 @@ def index():
     daily_steps.Date = pd.to_datetime(daily_steps.Date)
     daily = daily_steps.loc[(daily_steps.Id == daily_steps.Id.unique()[0]) & (daily_steps.Date < '2016-04-19')]
     daily_fig = px.bar(daily, x='Date', y='Steps')
-    return render_template("index.html", 
+    return render_template("index.html",
+                           steps=steps,
+                           target=target,
                            hourly_fig=hourly_fig.to_html(full_html=False),
                            daily_fig=daily_fig.to_html(full_html=False))
 
@@ -85,7 +102,7 @@ def register():
                 db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash))
                 db.execute("INSERT INTO goals (username, step_goal, sleep_goal) VALUES (?, 'Create one', 'Create one')", (username,))
                 db.commit()
-                return redirect("/")
+                return redirect("/login")
             # If username already exists
             except:
                 return render_template("register.html", invalid="Username already exists!")
@@ -140,7 +157,7 @@ def logout():
     session.clear()
 
     # Redirect user to login form
-    return redirect("/")
+    return redirect("/login")
 
 @app.route("/profile", methods=["GET", "POST"])
 def profile():
