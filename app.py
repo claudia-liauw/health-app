@@ -16,7 +16,7 @@ Session(app)
 db_path = "data/users.db"
 
 @app.route("/")
-def index():
+def steps():
     steps = 2000
 
     # check if target is met
@@ -43,7 +43,7 @@ def index():
     daily_steps.Date = pd.to_datetime(daily_steps.Date)
     daily = daily_steps.loc[(daily_steps.Id == daily_steps.Id.unique()[0]) & (daily_steps.Date < '2016-04-19')]
     daily_fig = px.bar(daily, x='Date', y='Steps')
-    return render_template("index.html",
+    return render_template("steps.html",
                            steps=steps,
                            target=target,
                            hourly_fig=hourly_fig.to_html(full_html=False),
