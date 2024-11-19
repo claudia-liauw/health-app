@@ -51,12 +51,30 @@ def steps():
 
 @app.route("/sleep")
 def sleep():
+    hours_slept = 7
+    
+    # check if target is met
+    with sqlite3.connect("data/users.db") as db:
+        sleep_goal = db.execute(
+            "SELECT sleep_goal FROM goals WHERE username = ?", (session['user_id'],)
+        ).fetchall()
+    sleep_goal = sleep_goal[0][0]
+    if sleep_goal == 'Create one':
+        target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
+    elif hours_slept >= float(sleep_goal):
+        target = '<p>Sleep target reached!</p>'
+    else:
+        target = '<p>Sleep target not reached.</p>'
+
     daily_sleep = pd.read_csv('data/fitbit_apr/sleepDay_merged.csv')
     daily_sleep = daily_sleep.rename(columns={'SleepDay': 'Date', 'TotalMinutesAsleep': 'Total Minutes Asleep'})
     daily_sleep.Date = pd.to_datetime(daily_sleep.Date)
     sleep = daily_sleep.loc[(daily_sleep.Id == daily_sleep.Id.unique()[0]) & (daily_sleep.Date < '2016-04-19')]
     fig = px.bar(sleep, x='Date', y='Total Minutes Asleep')
-    return render_template("sleep.html", fig=fig.to_html(full_html=False))
+    return render_template("sleep.html", 
+                           hours_slept=hours_slept,
+                           target=target,
+                           fig=fig.to_html(full_html=False))
 
 @app.route("/heart-rate", methods=["GET", "POST"])
 def heart_rate():
