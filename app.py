@@ -2,7 +2,7 @@ from flask import Flask, request, render_template, session, redirect
 from flask_session import Session
 import pandas as pd
 import plotly.express as px
-from src.utils import get_anomalies
+from src.utils import get_anomalies, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
 
@@ -16,6 +16,7 @@ Session(app)
 db_path = "data/users.db"
 
 @app.route("/")
+@login_required
 def steps():
     steps = 2000
 
@@ -50,6 +51,7 @@ def steps():
                            daily_fig=daily_fig.to_html(full_html=False))
 
 @app.route("/sleep")
+@login_required
 def sleep():
     hours_slept = 7
     
@@ -77,6 +79,7 @@ def sleep():
                            fig=fig.to_html(full_html=False))
 
 @app.route("/heart-rate", methods=["GET", "POST"])
+@login_required
 def heart_rate():
     if request.method == "POST":
         data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
@@ -120,7 +123,7 @@ def register():
                 db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash))
                 db.execute("INSERT INTO goals (username, step_goal, sleep_goal) VALUES (?, 'Create one', 'Create one')", (username,))
                 db.commit()
-                return redirect("/login")
+                return redirect("/")
             # If username already exists
             except:
                 return render_template("register.html", invalid="Username already exists!")
@@ -175,9 +178,10 @@ def logout():
     session.clear()
 
     # Redirect user to login form
-    return redirect("/login")
+    return redirect("/")
 
 @app.route("/profile", methods=["GET", "POST"])
+@login_required
 def profile():
     username = session['user_id']
     with sqlite3.connect("data/users.db") as db:
