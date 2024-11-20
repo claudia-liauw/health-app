@@ -22,9 +22,17 @@ with open('data/fitbit_access_token.txt', 'r') as f:
 @app.route("/")
 @login_required
 def steps():
+    with sqlite3.connect("data/users.db") as db:
+        user_id = db.execute(
+            "SELECT user_id FROM profile WHERE username = ?", (session['user_id'],)
+        ).fetchall()
+    user_id = user_id[0][0]
+    if user_id == 'Provide user ID':
+        return redirect('/profile')
+
     # retrieve today's data via fitbit API
     date = '2024-10-10'
-    response = requests.get('https://api.fitbit.com/1/user/-/activities/steps/date/' + date + '/1d.json',
+    response = requests.get(f'https://api.fitbit.com/1/user/{user_id}/activities/steps/date/{date}/1d.json',
                             headers={'Authorization': 'Bearer ' + FITBIT_ACCESS_TOKEN})
     steps_json = response.json()
     total_steps = steps_json['activities-steps'][0]['value']
@@ -32,7 +40,7 @@ def steps():
     # check if target is met
     with sqlite3.connect("data/users.db") as db:
         step_goal = db.execute(
-            "SELECT step_goal FROM goals WHERE username = ?", (session['user_id'],)
+            "SELECT step_goal FROM profile WHERE username = ?", (session['user_id'],)
         ).fetchall()
     step_goal = step_goal[0][0]
     if step_goal == 'Create one':
@@ -73,7 +81,7 @@ def sleep():
     # check if target is met
     with sqlite3.connect("data/users.db") as db:
         sleep_goal = db.execute(
-            "SELECT sleep_goal FROM goals WHERE username = ?", (session['user_id'],)
+            "SELECT sleep_goal FROM profile WHERE username = ?", (session['user_id'],)
         ).fetchall()
     sleep_goal = sleep_goal[0][0]
     if sleep_goal == 'Create one':
@@ -136,7 +144,8 @@ def register():
         with sqlite3.connect(db_path) as db:
             try:
                 db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash))
-                db.execute("INSERT INTO goals (username, step_goal, sleep_goal) VALUES (?, 'Create one', 'Create one')", (username,))
+                db.execute("""INSERT INTO profile (username, step_goal, sleep_goal, user_id) 
+                           VALUES (?, 'Create one', 'Create one', 'Provide user ID')""", (username,))
                 db.commit()
                 return redirect("/")
             # If username already exists
@@ -200,24 +209,32 @@ def logout():
 def profile():
     username = session['user_id']
     with sqlite3.connect("data/users.db") as db:
-        rows = db.execute(
-            "SELECT * FROM goals WHERE username = ?", (username,)
+        goals = db.execute(
+            "SELECT * FROM profile WHERE username = ?", (username,)
         ).fetchall()
 
-        ori_step_goal = rows[0][1]
-        ori_sleep_goal = rows[0][2]
+        ori_step_goal = goals[0][1]
+        ori_sleep_goal = goals[0][2]
+        ori_user_id = goals[0][3]
     
     if request.method == "POST":
         step_goal = request.form['step']
+        sleep_goal = request.form['sleep']
+        user_id = request.form['user_id']
+
         # if empty, set to existing data
         step_goal = step_goal if step_goal else ori_step_goal
-        sleep_goal = request.form['sleep']
         sleep_goal = sleep_goal if sleep_goal else ori_sleep_goal
+        user_id = user_id if user_id else ori_user_id
 
         with sqlite3.connect(db_path) as db:
-            db.execute("UPDATE goals SET step_goal = ?, sleep_goal = ? WHERE username = ?", 
-                       (step_goal, sleep_goal, username))
+            db.execute("UPDATE profile SET step_goal = ?, sleep_goal = ?, user_id = ? WHERE username = ?", 
+                       (step_goal, sleep_goal, user_id, username))
             db.commit()
         return redirect("/profile")
     else:
-        return render_template("profile.html", username=username, step_goal=ori_step_goal, sleep_goal=ori_sleep_goal)
+        return render_template("profile.html", 
+                               username=username, 
+                               step_goal=ori_step_goal, 
+                               sleep_goal=ori_sleep_goal, 
+                               user_id=ori_user_id)
