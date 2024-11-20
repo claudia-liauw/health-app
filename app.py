@@ -103,7 +103,7 @@ def sleep():
     else:
         target = '<p>Sleep target not reached.</p>'
 
-    # retrieve week data via fitbit API
+    # retrieve week data via fitbit API and display
     date = pd.Timestamp(date) 
     start_date = date - pd.Timedelta('7 days')
     week_sleep = []
@@ -135,38 +135,36 @@ def heart_rate():
         flash('Invalid user ID')
         return redirect('/profile')
     
-    if request.method == "POST":
-        data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
-        data.Time = pd.to_datetime(data.Time)
-        hr = data.loc[(data.Id == data.Id.unique()[0]) & (data.Time < '2016-04-20')]
+    # display today's heart rate
+    today_heart.time = pd.to_datetime(date + ' ' + today_heart.time)
+    today_heart = today_heart.rename(columns={'time': 'Time', 'value': 'Heart Rate'})
+    today_fig = px.line(today_heart, x='Time', y='Heart Rate', markers=True)
 
+    # retrieve week data via fitbit API and display
+    week_json = retrieve_data('heart', user_id, FITBIT_ACCESS_TOKEN, date, period='7d')
+    week_heart = []
+    for day in range(7):
+        date = week_json['activities-heart'][day]['dateTime']
+        try:
+            resting_hr = week_json['activities-heart'][day]['value']['restingHeartRate']
+        except KeyError:
+            resting_hr = 0
+        week_heart.append({'Date': date, 'Resting HR': resting_hr})
+    week_fig = px.bar(week_heart, x='Date', y='Resting HR')
+    
+    if request.method == "POST":
         from momentfm import MOMENTPipeline
         model = MOMENTPipeline.from_pretrained(
             "AutonLab/MOMENT-1-large", 
             model_kwargs={"task_name": "reconstruction"},  # For anomaly detection, we will load MOMENT in `reconstruction` mode
             local_files_only=True,  # Whether or not to only look at local files (i.e., do not try to download the model).
         )
-        anomalies = get_anomalies(hr, model).reset_index(drop=True)
-        return render_template("heart.html", tables=[anomalies.to_html(classes='data', header='true')])
+        anomalies = get_anomalies(today_heart, model, anomaly_thresh=5).reset_index(drop=True)
+        return render_template("heart.html", tables=[anomalies.to_html(classes='data', header='true')],
+                               today_fig=today_fig.to_html(full_html=False),
+                               week_fig=week_fig.to_html(full_html=False))
     
     else:
-        # display today's heart rate
-        today_heart.time = pd.to_datetime(date + ' ' + today_heart.time)
-        today_heart = today_heart.rename(columns={'time': 'Time', 'value': 'Heart Rate'})
-        today_fig = px.line(today_heart, x='Time', y='Heart Rate', markers=True)
-
-        # retrieve week data via fitbit API
-        week_json = retrieve_data('heart', user_id, FITBIT_ACCESS_TOKEN, date, period='7d')
-        week_heart = []
-        for day in range(7):
-            date = week_json['activities-heart'][day]['dateTime']
-            try:
-                resting_hr = week_json['activities-heart'][day]['value']['restingHeartRate']
-            except KeyError:
-                resting_hr = 0
-            week_heart.append({'Date': date, 'Resting HR': resting_hr})
-        week_fig = px.bar(week_heart, x='Date', y='Resting HR')
-        
         return render_template("heart.html", tables=None, 
                                today_fig=today_fig.to_html(full_html=False),
                                week_fig=week_fig.to_html(full_html=False))

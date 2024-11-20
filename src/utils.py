@@ -23,7 +23,7 @@ def login_required(f):
     return decorated_function
 
 class TimeSeriesDataset(Dataset):
-    def __init__(self, data, value_col='Value', time_col='Time', 
+    def __init__(self, data, value_col='Heart Rate', time_col='Time', 
                  interval_value=5, interval_unit='s', interpolation_limit=11,
                  kernel_size=512, stride=512, missing_thresh=0.5):
         self.data = data
