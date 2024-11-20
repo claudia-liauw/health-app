@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from flask import session, redirect
 from functools import wraps
+import requests
 
 def login_required(f):
     """
@@ -93,3 +94,8 @@ def get_anomalies(data, model, anomaly_thresh=20):
                               'Predicted': preds.round(1), 
                               'Anomaly Score': anomaly_scores.round(1)})
     return anomalies.loc[anomalies['Anomaly Score'] > anomaly_thresh]
+
+def retrieve_data(data_type, user_id, access_token, date, period):
+    response = requests.get(f'https://api.fitbit.com/1/user/{user_id}/activities/{data_type}/date/{date}/{period}.json',
+                            headers={'Authorization': 'Bearer ' + access_token})
+    return response.json()

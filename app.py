@@ -2,10 +2,9 @@ from flask import Flask, request, render_template, session, redirect
 from flask_session import Session
 import pandas as pd
 import plotly.express as px
-from src.utils import get_anomalies, login_required
+from src.utils import get_anomalies, login_required, retrieve_data
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
-import requests
 
 app = Flask(__name__)
 
@@ -32,9 +31,7 @@ def steps():
 
     # retrieve today's data via fitbit API
     date = '2024-10-10'
-    response = requests.get(f'https://api.fitbit.com/1/user/{user_id}/activities/steps/date/{date}/1d.json',
-                            headers={'Authorization': 'Bearer ' + FITBIT_ACCESS_TOKEN})
-    steps_json = response.json()
+    steps_json = retrieve_data('steps', user_id, FITBIT_ACCESS_TOKEN, date, '1d')
     total_steps = steps_json['activities-steps'][0]['value']
 
     # check if target is met
@@ -58,9 +55,7 @@ def steps():
     hourly_fig = px.bar(hourly_steps, x='Hour', y='Steps')
 
     # retrieve week data via fitbit API
-    response = requests.get('https://api.fitbit.com/1/user/-/activities/steps/date/' + date + '/7d.json',
-                            headers={'Authorization': 'Bearer ' + FITBIT_ACCESS_TOKEN})
-    week_json = response.json()
+    week_json = retrieve_data('steps', user_id, FITBIT_ACCESS_TOKEN, date, '7d')
 
     # display week's steps
     week_steps = pd.DataFrame(week_json['activities-steps'])
