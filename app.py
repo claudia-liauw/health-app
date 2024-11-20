@@ -5,6 +5,7 @@ import plotly.express as px
 from src.utils import get_anomalies, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
+import requests
 
 app = Flask(__name__)
 
@@ -15,10 +16,18 @@ Session(app)
 
 db_path = "data/users.db"
 
+with open('data/fitbit_access_token.txt', 'r') as f:
+    FITBIT_ACCESS_TOKEN = f.read()
+
 @app.route("/")
 @login_required
 def steps():
-    steps = 2000
+    # retrieve data via fitbit API
+    date = '2024-10-10'
+    response = requests.get('https://api.fitbit.com/1/user/-/activities/steps/date/' + date + '/1d.json',
+                            headers={'Authorization': 'Bearer ' + FITBIT_ACCESS_TOKEN})
+    steps_json = response.json()
+    total_steps = steps_json['activities-steps'][0]['value']
 
     # check if target is met
     with sqlite3.connect("data/users.db") as db:
@@ -28,16 +37,17 @@ def steps():
     step_goal = step_goal[0][0]
     if step_goal == 'Create one':
         target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
-    elif steps >= int(step_goal):
+    elif int(total_steps) >= int(step_goal):
         target = '<p>Target reached!</p>'
     else:
         target = '<p>Target not yet reached.</p>'
 
-    hourly_steps = pd.read_csv('data/fitbit_apr/hourlySteps_merged.csv')
-    hourly_steps = hourly_steps.rename(columns={'ActivityHour': 'Hour', 'StepTotal': 'Steps'})
-    hourly_steps.Hour = pd.to_datetime(hourly_steps.Hour)
-    hourly = hourly_steps.loc[(hourly_steps.Id == hourly_steps.Id.unique()[0]) & (hourly_steps.Hour < '2016-04-13')]
-    hourly_fig = px.bar(hourly, x='Hour', y='Steps')
+    # display today's steps by hour
+    today_steps = pd.DataFrame(steps_json['activities-steps-intraday']['dataset'])
+    today_steps.time = pd.to_datetime(date + ' ' + today_steps.time)
+    hourly_steps = today_steps.groupby(pd.Grouper(key='time', freq='h')).sum().reset_index()
+    hourly_steps = hourly_steps.rename(columns={'time': 'Hour', 'value': 'Steps'})
+    hourly_fig = px.bar(hourly_steps, x='Hour', y='Steps')
 
     daily_steps = pd.read_csv('data/fitbit_apr/dailySteps_merged.csv')
     daily_steps = daily_steps.rename(columns={'ActivityDay': 'Date', 'StepTotal': 'Steps'})
@@ -45,7 +55,7 @@ def steps():
     daily = daily_steps.loc[(daily_steps.Id == daily_steps.Id.unique()[0]) & (daily_steps.Date < '2016-04-19')]
     daily_fig = px.bar(daily, x='Date', y='Steps')
     return render_template("steps.html",
-                           steps=steps,
+                           steps=total_steps,
                            target=target,
                            hourly_fig=hourly_fig.to_html(full_html=False),
                            daily_fig=daily_fig.to_html(full_html=False))
