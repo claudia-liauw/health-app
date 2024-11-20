@@ -1,8 +1,9 @@
 from flask import Flask, request, render_template, session, redirect, flash
 from flask_session import Session
+import numpy as np
 import pandas as pd
 import plotly.express as px
-from src.utils import get_anomalies, login_required, retrieve_data
+from src.utils import get_anomalies, login_required, retrieve_data, get_user_id
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
 
@@ -21,20 +22,17 @@ with open('data/fitbit_access_token.txt', 'r') as f:
 @app.route("/")
 @login_required
 def steps():
-    with sqlite3.connect("data/users.db") as db:
-        user_id = db.execute(
-            "SELECT user_id FROM profile WHERE username = ?", (session['user_id'],)
-        ).fetchall()
-    user_id = user_id[0][0]
+    # get user ID
+    user_id = get_user_id(db_path, session['user_id'])
     if user_id == 'Provide user ID':
         flash('Provide user ID')
         return redirect('/profile')
 
     # retrieve today's data via fitbit API
     date = '2024-10-10'
-    steps_json = retrieve_data('steps', user_id, FITBIT_ACCESS_TOKEN, date, '1d')
+    today_json = retrieve_data('steps', user_id, FITBIT_ACCESS_TOKEN, date, '1d')
     try: 
-        total_steps = steps_json['activities-steps'][0]['value']
+        total_steps = today_json['activities-steps'][0]['value']
     except KeyError:
         flash('Invalid user ID')
         return redirect('/profile')
@@ -53,7 +51,7 @@ def steps():
         target = '<p>Target not yet reached.</p>'
 
     # display today's steps by hour
-    today_steps = pd.DataFrame(steps_json['activities-steps-intraday']['dataset'])
+    today_steps = pd.DataFrame(today_json['activities-steps-intraday']['dataset'])
     today_steps.time = pd.to_datetime(date + ' ' + today_steps.time)
     hourly_steps = today_steps.groupby(pd.Grouper(key='time', freq='h')).sum().reset_index()
     hourly_steps = hourly_steps.rename(columns={'time': 'Hour', 'value': 'Steps'})
@@ -77,10 +75,23 @@ def steps():
 @app.route("/sleep")
 @login_required
 def sleep():
-    hours_slept = 7
+    # get user ID
+    user_id = get_user_id(db_path, session['user_id'])
+    if user_id == 'Provide user ID':
+        flash('Provide user ID')
+        return redirect('/profile')
+
+    # retrieve today's data via fitbit API
+    date = '2024-10-17'
+    today_json = retrieve_data('sleep', user_id, FITBIT_ACCESS_TOKEN, date, version=1.2)
+    try: 
+        hours_slept = np.round(today_json['summary']['totalMinutesAsleep'] / 60, 2)
+    except KeyError:
+        flash('Invalid user ID')
+        return redirect('/profile')
     
     # check if target is met
-    with sqlite3.connect("data/users.db") as db:
+    with sqlite3.connect(db_path) as db:
         sleep_goal = db.execute(
             "SELECT sleep_goal FROM profile WHERE username = ?", (session['user_id'],)
         ).fetchall()
@@ -92,11 +103,15 @@ def sleep():
     else:
         target = '<p>Sleep target not reached.</p>'
 
-    daily_sleep = pd.read_csv('data/fitbit_apr/sleepDay_merged.csv')
-    daily_sleep = daily_sleep.rename(columns={'SleepDay': 'Date', 'TotalMinutesAsleep': 'Total Minutes Asleep'})
-    daily_sleep.Date = pd.to_datetime(daily_sleep.Date)
-    sleep = daily_sleep.loc[(daily_sleep.Id == daily_sleep.Id.unique()[0]) & (daily_sleep.Date < '2016-04-19')]
-    fig = px.bar(sleep, x='Date', y='Total Minutes Asleep')
+    # retrieve week data via fitbit API
+    date = pd.Timestamp(date) 
+    start_date = date - pd.Timedelta('7 days')
+    week_sleep = []
+    for day in pd.date_range(start_date, date):
+        day_json = retrieve_data('sleep', user_id, FITBIT_ACCESS_TOKEN, day.date(), version=1.2)
+        week_sleep.append({'Date': day.date(), 'Total Minutes Asleep': day_json['summary']['totalMinutesAsleep']})
+    fig = px.bar(week_sleep, x='Date', y='Total Minutes Asleep')
+
     return render_template("sleep.html", 
                            hours_slept=hours_slept,
                            target=target,
@@ -174,7 +189,7 @@ def login():
             return render_template("login.html", invalid="Must provide password!")
 
         # Query database for username
-        with sqlite3.connect("data/users.db") as db:
+        with sqlite3.connect(db_path) as db:
             rows = db.execute(
                 "SELECT * FROM users WHERE username = ?", (request.form.get("username"),)
             ).fetchall()
@@ -209,7 +224,7 @@ def logout():
 @login_required
 def profile():
     username = session['user_id']
-    with sqlite3.connect("data/users.db") as db:
+    with sqlite3.connect(db_path) as db:
         goals = db.execute(
             "SELECT * FROM profile WHERE username = ?", (username,)
         ).fetchall()

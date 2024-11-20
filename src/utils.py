@@ -5,6 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 from flask import session, redirect
 from functools import wraps
 import requests
+import sqlite3
 
 def login_required(f):
     """
@@ -95,7 +96,18 @@ def get_anomalies(data, model, anomaly_thresh=20):
                               'Anomaly Score': anomaly_scores.round(1)})
     return anomalies.loc[anomalies['Anomaly Score'] > anomaly_thresh]
 
-def retrieve_data(data_type, user_id, access_token, date, period):
-    response = requests.get(f'https://api.fitbit.com/1/user/{user_id}/activities/{data_type}/date/{date}/{period}.json',
+def retrieve_data(data_type, user_id, access_token, date, period='', version=1):
+    if data_type in ['steps', 'heart']:
+        data_type = 'activities/' + data_type
+    if period:
+        period = '/' + period
+    response = requests.get(f'https://api.fitbit.com/{version}/user/{user_id}/{data_type}/date/{date}{period}.json',
                             headers={'Authorization': 'Bearer ' + access_token})
     return response.json()
+
+def get_user_id(db_path, username):
+    with sqlite3.connect(db_path) as db:
+        user_id = db.execute(
+            "SELECT user_id FROM profile WHERE username = ?", (username,)
+        ).fetchall()
+    return user_id[0][0]
