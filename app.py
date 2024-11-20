@@ -120,6 +120,13 @@ def sleep():
 @app.route("/heart-rate", methods=["GET", "POST"])
 @login_required
 def heart_rate():
+    # get user ID
+    user_id = get_user_id(db_path, session['user_id'])
+    if user_id == 'Provide user ID':
+        flash('Provide user ID')
+        return redirect('/profile')
+    date = '2024-10-10'
+    
     if request.method == "POST":
         data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
         data.Time = pd.to_datetime(data.Time)
@@ -133,8 +140,21 @@ def heart_rate():
         )
         anomalies = get_anomalies(hr, model).reset_index(drop=True)
         return render_template("heart.html", tables=[anomalies.to_html(classes='data', header='true')])
+    
     else:
-        return render_template("heart.html", tables=None)
+        # retrieve week data via fitbit API
+        week_json = retrieve_data('heart', user_id, FITBIT_ACCESS_TOKEN, date, period='7d')
+        week_heart = []
+        for day in range(7):
+            date = week_json['activities-heart'][day]['dateTime']
+            try:
+                resting_hr = week_json['activities-heart'][day]['value']['restingHeartRate']
+            except KeyError:
+                resting_hr = 0
+            week_heart.append({'Date': date, 'Resting HR': resting_hr})
+        fig = px.bar(week_heart, x='Date', y='Resting HR')
+        
+        return render_template("heart.html", tables=None, fig=fig.to_html(full_html=False))
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
