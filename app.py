@@ -125,7 +125,15 @@ def heart_rate():
     if user_id == 'Provide user ID':
         flash('Provide user ID')
         return redirect('/profile')
+    
+    # retrieve today's data via fitbit API
     date = '2024-10-10'
+    today_json = retrieve_data('heart', user_id, FITBIT_ACCESS_TOKEN, date, period='1d')
+    try: 
+        today_heart = pd.DataFrame(today_json['activities-heart-intraday']['dataset'])
+    except KeyError:
+        flash('Invalid user ID')
+        return redirect('/profile')
     
     if request.method == "POST":
         data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
@@ -142,6 +150,11 @@ def heart_rate():
         return render_template("heart.html", tables=[anomalies.to_html(classes='data', header='true')])
     
     else:
+        # display today's heart rate
+        today_heart.time = pd.to_datetime(date + ' ' + today_heart.time)
+        today_heart = today_heart.rename(columns={'time': 'Time', 'value': 'Heart Rate'})
+        today_fig = px.line(today_heart, x='Time', y='Heart Rate', markers=True)
+
         # retrieve week data via fitbit API
         week_json = retrieve_data('heart', user_id, FITBIT_ACCESS_TOKEN, date, period='7d')
         week_heart = []
@@ -152,9 +165,11 @@ def heart_rate():
             except KeyError:
                 resting_hr = 0
             week_heart.append({'Date': date, 'Resting HR': resting_hr})
-        fig = px.bar(week_heart, x='Date', y='Resting HR')
+        week_fig = px.bar(week_heart, x='Date', y='Resting HR')
         
-        return render_template("heart.html", tables=None, fig=fig.to_html(full_html=False))
+        return render_template("heart.html", tables=None, 
+                               today_fig=today_fig.to_html(full_html=False),
+                               week_fig=week_fig.to_html(full_html=False))
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
