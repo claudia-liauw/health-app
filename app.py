@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, session, redirect
+from flask import Flask, request, render_template, session, redirect, flash
 from flask_session import Session
 import pandas as pd
 import plotly.express as px
@@ -27,12 +27,17 @@ def steps():
         ).fetchall()
     user_id = user_id[0][0]
     if user_id == 'Provide user ID':
+        flash('Provide user ID')
         return redirect('/profile')
 
     # retrieve today's data via fitbit API
     date = '2024-10-10'
     steps_json = retrieve_data('steps', user_id, FITBIT_ACCESS_TOKEN, date, '1d')
-    total_steps = steps_json['activities-steps'][0]['value']
+    try: 
+        total_steps = steps_json['activities-steps'][0]['value']
+    except KeyError:
+        flash('Invalid user ID')
+        return redirect('/profile')
 
     # check if target is met
     with sqlite3.connect("data/users.db") as db:
@@ -62,6 +67,7 @@ def steps():
     week_steps['Steps'] = pd.to_numeric(week_steps.value)
     week_steps = week_steps.rename(columns={'dateTime': 'Date'})
     daily_fig = px.bar(week_steps, x='Date', y='Steps')
+    
     return render_template("steps.html",
                            steps=total_steps,
                            target=target,
