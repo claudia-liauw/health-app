@@ -22,7 +22,7 @@ with open('data/fitbit_access_token.txt', 'r') as f:
 @app.route("/")
 @login_required
 def steps():
-    # retrieve data via fitbit API
+    # retrieve today's data via fitbit API
     date = '2024-10-10'
     response = requests.get('https://api.fitbit.com/1/user/-/activities/steps/date/' + date + '/1d.json',
                             headers={'Authorization': 'Bearer ' + FITBIT_ACCESS_TOKEN})
@@ -49,11 +49,16 @@ def steps():
     hourly_steps = hourly_steps.rename(columns={'time': 'Hour', 'value': 'Steps'})
     hourly_fig = px.bar(hourly_steps, x='Hour', y='Steps')
 
-    daily_steps = pd.read_csv('data/fitbit_apr/dailySteps_merged.csv')
-    daily_steps = daily_steps.rename(columns={'ActivityDay': 'Date', 'StepTotal': 'Steps'})
-    daily_steps.Date = pd.to_datetime(daily_steps.Date)
-    daily = daily_steps.loc[(daily_steps.Id == daily_steps.Id.unique()[0]) & (daily_steps.Date < '2016-04-19')]
-    daily_fig = px.bar(daily, x='Date', y='Steps')
+    # retrieve week data via fitbit API
+    response = requests.get('https://api.fitbit.com/1/user/-/activities/steps/date/' + date + '/7d.json',
+                            headers={'Authorization': 'Bearer ' + FITBIT_ACCESS_TOKEN})
+    week_json = response.json()
+
+    # display week's steps
+    week_steps = pd.DataFrame(week_json['activities-steps'])
+    week_steps['Steps'] = pd.to_numeric(week_steps.value)
+    week_steps = week_steps.rename(columns={'dateTime': 'Date'})
+    daily_fig = px.bar(week_steps, x='Date', y='Steps')
     return render_template("steps.html",
                            steps=total_steps,
                            target=target,
