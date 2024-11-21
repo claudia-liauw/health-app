@@ -3,9 +3,10 @@ from flask_session import Session
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from src.utils import get_anomalies, login_required, retrieve_data, get_user_id
+from src.utils import *
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
+import urllib.parse
 
 app = Flask(__name__)
 
@@ -16,21 +17,16 @@ Session(app)
 
 db_path = "data/users.db"
 
-with open('data/fitbit_access_token.txt', 'r') as f:
-    FITBIT_ACCESS_TOKEN = f.read()
-
 @app.route("/")
 @login_required
 def steps():
-    # get user ID
-    user_id = get_user_id(db_path, session['user_id'])
-    if user_id == 'Provide user ID':
-        flash('Provide user ID')
-        return redirect('/profile')
+    # get user ID and access token
+    fitbit_id = session['fitbit_id']
+    access_token = session['access_token']
 
     # retrieve today's data via fitbit API
     date = '2024-10-10'
-    today_json = retrieve_data('steps', user_id, FITBIT_ACCESS_TOKEN, date, '1d')
+    today_json = retrieve_data('steps', fitbit_id, access_token, date, '1d')
     try: 
         total_steps = today_json['activities-steps'][0]['value']
     except KeyError:
@@ -58,7 +54,7 @@ def steps():
     hourly_fig = px.bar(hourly_steps, x='Hour', y='Steps')
 
     # retrieve week data via fitbit API
-    week_json = retrieve_data('steps', user_id, FITBIT_ACCESS_TOKEN, date, '7d')
+    week_json = retrieve_data('steps', fitbit_id, access_token, date, '7d')
 
     # display week's steps
     week_steps = pd.DataFrame(week_json['activities-steps'])
@@ -75,15 +71,13 @@ def steps():
 @app.route("/sleep")
 @login_required
 def sleep():
-    # get user ID
-    user_id = get_user_id(db_path, session['user_id'])
-    if user_id == 'Provide user ID':
-        flash('Provide user ID')
-        return redirect('/profile')
+    # get user ID and access token
+    fitbit_id = session['fitbit_id']
+    access_token = session['access_token']
 
     # retrieve today's data via fitbit API
     date = '2024-10-17'
-    today_json = retrieve_data('sleep', user_id, FITBIT_ACCESS_TOKEN, date, version=1.2)
+    today_json = retrieve_data('sleep', fitbit_id, access_token, date, version=1.2)
     try: 
         hours_slept = np.round(today_json['summary']['totalMinutesAsleep'] / 60, 2)
     except KeyError:
@@ -108,7 +102,7 @@ def sleep():
     start_date = date - pd.Timedelta('7 days')
     week_sleep = []
     for day in pd.date_range(start_date, date):
-        day_json = retrieve_data('sleep', user_id, FITBIT_ACCESS_TOKEN, day.date(), version=1.2)
+        day_json = retrieve_data('sleep', fitbit_id, access_token, day.date(), version=1.2)
         week_sleep.append({'Date': day.date(), 'Total Minutes Asleep': day_json['summary']['totalMinutesAsleep']})
     fig = px.bar(week_sleep, x='Date', y='Total Minutes Asleep')
 
@@ -120,15 +114,13 @@ def sleep():
 @app.route("/heart-rate", methods=["GET", "POST"])
 @login_required
 def heart_rate():
-    # get user ID
-    user_id = get_user_id(db_path, session['user_id'])
-    if user_id == 'Provide user ID':
-        flash('Provide user ID')
-        return redirect('/profile')
+    # get user ID and access token
+    fitbit_id = session['fitbit_id']
+    access_token = session['access_token']
     
     # retrieve today's data via fitbit API
     date = '2024-10-10'
-    today_json = retrieve_data('heart', user_id, FITBIT_ACCESS_TOKEN, date, period='1d')
+    today_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d')
     try: 
         today_heart = pd.DataFrame(today_json['activities-heart-intraday']['dataset'])
     except KeyError:
@@ -141,7 +133,7 @@ def heart_rate():
     today_fig = px.line(today_heart, x='Time', y='Heart Rate', markers=True)
 
     # retrieve week data via fitbit API and display
-    week_json = retrieve_data('heart', user_id, FITBIT_ACCESS_TOKEN, date, period='7d')
+    week_json = retrieve_data('heart', fitbit_id, access_token, date, period='7d')
     week_heart = []
     for day in range(7):
         date = week_json['activities-heart'][day]['dateTime']
@@ -236,8 +228,8 @@ def login():
         # Remember which user has logged in
         session["user_id"] = rows[0][0]
 
-        # Redirect user to home page
-        return redirect("/")
+        # Redirect user to authenticate
+        return redirect("/authenticate")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -287,3 +279,42 @@ def profile():
                                step_goal=ori_step_goal, 
                                sleep_goal=ori_sleep_goal, 
                                user_id=ori_user_id)
+
+CLIENT_ID = '23PQH4'
+REDIRECT_URL = 'http://localhost:5000/callback'
+
+@app.route("/authenticate")
+def authenticate():
+    session['auth_params'] = AppAuthenticator()()
+    query_params = {
+        'response_type': 'code',
+        'client_id': CLIENT_ID,
+        'scope': 'activity heartrate settings sleep',
+        'code_challenge': session['auth_params']['code_challenge'],
+        'code_challenge_method': 'S256',
+        'state': session['auth_params']['state'],
+        'redirect_uri': REDIRECT_URL,
+    }
+    url = f"https://www.fitbit.com/oauth2/authorize?{urllib.parse.urlencode(query_params)}"
+    return redirect(url)
+
+@app.route("/callback")
+def callback():
+    code = request.args['code']
+    state = request.args['state']
+    print(session)
+    if state != session['auth_params']['state']:
+        return 'Error: does not match original state'
+
+    print('callback')
+    response = requests.post('https://api.fitbit.com/oauth2/token',
+                             headers={'Authorization': '',
+                                      'Content-Type': 'application/x-www-form-urlencoded'},
+                             data={'client_id': CLIENT_ID,
+                                   'grant_type': 'authorization_code',
+                                   'redirect_uri': REDIRECT_URL,
+                                   'code': code,
+                                   'code_verifier': session['auth_params']['code_verifier']})
+    session['access_token'] = response.json()['access_token']
+    session['fitbit_id'] = response.json()['user_id']
+    return redirect("/")

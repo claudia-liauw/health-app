@@ -6,6 +6,9 @@ from flask import session, redirect
 from functools import wraps
 import requests
 import sqlite3
+import secrets
+import hashlib
+import base64
 
 def login_required(f):
     """
@@ -111,3 +114,26 @@ def get_user_id(db_path, username):
             "SELECT user_id FROM profile WHERE username = ?", (username,)
         ).fetchall()
     return user_id[0][0]
+
+
+class AppAuthenticator:
+    # with help from chatgpt
+    def generate_code_verifier(self, length=128):
+        verifier = secrets.token_urlsafe(length)
+        return verifier[:128]
+
+    def generate_code_challenge(self, verifier):
+        sha256_hash = hashlib.sha256(verifier.encode()).digest()
+        code_challenge = base64.urlsafe_b64encode(sha256_hash).rstrip(b'=').decode()
+        return code_challenge
+
+    def generate_state(self):
+        return secrets.token_urlsafe(32)
+
+    def __call__(self):
+        code_verifier = self.generate_code_verifier()
+        code_challenge = self.generate_code_challenge(code_verifier)
+        state = self.generate_state()
+        return {'code_verifier': code_verifier,
+                'code_challenge': code_challenge,
+                'state': state}
