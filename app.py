@@ -30,8 +30,7 @@ def steps():
     try: 
         total_steps = today_json['activities-steps'][0]['value']
     except KeyError:
-        flash('Invalid user ID')
-        return redirect('/profile')
+        return redirect('/authenticate')
 
     # check if target is met
     with sqlite3.connect("data/users.db") as db:
@@ -81,8 +80,7 @@ def sleep():
     try: 
         hours_slept = np.round(today_json['summary']['totalMinutesAsleep'] / 60, 2)
     except KeyError:
-        flash('Invalid user ID')
-        return redirect('/profile')
+        return redirect('/authenticate')
     
     # check if target is met
     with sqlite3.connect(db_path) as db:
@@ -124,8 +122,7 @@ def heart_rate():
     try: 
         today_heart = pd.DataFrame(today_json['activities-heart-intraday']['dataset'])
     except KeyError:
-        flash('Invalid user ID')
-        return redirect('/profile')
+        return redirect('/authenticate')
     
     # display today's heart rate
     today_heart.time = pd.to_datetime(date + ' ' + today_heart.time)
@@ -298,9 +295,10 @@ def authenticate():
 def callback():
     code = request.args['code']
     state = request.args['state']
-    print(session)
+    if not code:
+        return 'Error: no authorisation code', 400
     if state != session['auth_params']['state']:
-        return 'Error: does not match original state'
+        return 'Error: does not match original state', 400
 
     print('callback')
     response = requests.post('https://api.fitbit.com/oauth2/token',
