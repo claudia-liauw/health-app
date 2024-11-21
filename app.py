@@ -255,15 +255,12 @@ def profile():
         ori_sleep_goal = goals[0][2]
     
     if request.method == "POST":
-        step_goal = request.form['step']
-        sleep_goal = request.form['sleep']
-
         # if empty, set to existing data
-        step_goal = step_goal if step_goal else ori_step_goal
-        sleep_goal = sleep_goal if sleep_goal else ori_sleep_goal
+        step_goal = request.form['step'] or ori_step_goal
+        sleep_goal = request.form['sleep'] or ori_sleep_goal
 
         with sqlite3.connect(db_path) as db:
-            db.execute("UPDATE profile SET step_goal = ?, sleep_goal = ?, WHERE username = ?", 
+            db.execute("UPDATE profile SET step_goal = ?, sleep_goal = ? WHERE username = ?", 
                        (step_goal, sleep_goal, username))
             db.commit()
         return redirect("/profile")
@@ -277,6 +274,7 @@ CLIENT_ID = '23PQH4'
 REDIRECT_URL = 'http://localhost:5000/callback'
 
 @app.route("/authenticate")
+@login_required
 def authenticate():
     session['auth_params'] = AppAuthenticator()()
     query_params = {
@@ -292,6 +290,7 @@ def authenticate():
     return redirect(url)
 
 @app.route("/callback")
+@login_required
 def callback():
     code = request.args['code']
     state = request.args['state']
