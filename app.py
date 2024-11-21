@@ -185,8 +185,8 @@ def register():
         with sqlite3.connect(db_path) as db:
             try:
                 db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash))
-                db.execute("""INSERT INTO profile (username, step_goal, sleep_goal, user_id) 
-                           VALUES (?, 'Create one', 'Create one', 'Provide user ID')""", (username,))
+                db.execute("""INSERT INTO profile (username, step_goal, sleep_goal) 
+                           VALUES (?, 'Create one', 'Create one')""", (username,))
                 db.commit()
                 return redirect("/")
             # If username already exists
@@ -256,29 +256,25 @@ def profile():
 
         ori_step_goal = goals[0][1]
         ori_sleep_goal = goals[0][2]
-        ori_user_id = goals[0][3]
     
     if request.method == "POST":
         step_goal = request.form['step']
         sleep_goal = request.form['sleep']
-        user_id = request.form['user_id']
 
         # if empty, set to existing data
         step_goal = step_goal if step_goal else ori_step_goal
         sleep_goal = sleep_goal if sleep_goal else ori_sleep_goal
-        user_id = user_id if user_id else ori_user_id
 
         with sqlite3.connect(db_path) as db:
-            db.execute("UPDATE profile SET step_goal = ?, sleep_goal = ?, user_id = ? WHERE username = ?", 
-                       (step_goal, sleep_goal, user_id, username))
+            db.execute("UPDATE profile SET step_goal = ?, sleep_goal = ?, WHERE username = ?", 
+                       (step_goal, sleep_goal, username))
             db.commit()
         return redirect("/profile")
     else:
         return render_template("profile.html", 
                                username=username, 
                                step_goal=ori_step_goal, 
-                               sleep_goal=ori_sleep_goal, 
-                               user_id=ori_user_id)
+                               sleep_goal=ori_sleep_goal)
 
 CLIENT_ID = '23PQH4'
 REDIRECT_URL = 'http://localhost:5000/callback'
