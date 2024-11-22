@@ -76,6 +76,8 @@ class TimeSeriesDataset(Dataset):
         return reindex_df.reset_index(drop=True).interpolate(limit=interpolation_limit)
     
     def _create_seq(self, kernel_size, stride, missing_thresh):
+        '''Constructs sequences of length kernel_size, moving by stride for each sequence.
+        Only append sequence to self.seqs if the threshold for missingness is not exceeded.'''
         df = self.data
         data_len = len(df)
         for i in range(0, data_len, stride):
@@ -95,6 +97,9 @@ class TimeSeriesDataset(Dataset):
     
 
 def get_anomalies(data, model, anomaly_thresh=20):
+    '''Construct TimeSeriesDataset and feed into model. 
+    Anomaly score is calculated from the mean absolute percentage error compared to the true signal.
+    Output: a dataframe with timestamps where the anomaly score exceeds the anomaly threshold.'''
     dataset = TimeSeriesDataset(data)
     batch_size = dataset.__len__() - 1
     dataloader = DataLoader(dataset, batch_size=batch_size, drop_last=True)
@@ -115,6 +120,7 @@ def get_anomalies(data, model, anomaly_thresh=20):
     return anomalies.loc[anomalies['Anomaly Score'] > anomaly_thresh]
 
 def retrieve_data(data_type, user_id, access_token, date, period='', version=1):
+    '''Retrieve Fitbit data using GET.'''
     if data_type in ['steps', 'heart']:
         data_type = 'activities/' + data_type
     if period:
@@ -123,16 +129,8 @@ def retrieve_data(data_type, user_id, access_token, date, period='', version=1):
                             headers={'Authorization': 'Bearer ' + access_token})
     return response.json()
 
-def get_user_id(db_path, username):
-    with sqlite3.connect(db_path) as db:
-        user_id = db.execute(
-            "SELECT user_id FROM profile WHERE username = ?", (username,)
-        ).fetchall()
-    return user_id[0][0]
-
-
 class AppAuthenticator:
-    # with help from chatgpt
+    '''Generate PKCE values and state (functions by ChatGPT).'''
     def generate_code_verifier(self, length=128):
         verifier = secrets.token_urlsafe(length)
         return verifier[:128]
