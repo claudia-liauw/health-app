@@ -125,14 +125,18 @@ def heart_rate():
     access_token = session['access_token']
     
     # retrieve data on chosen date via fitbit API
-    date = '2024-10-10'
-    today_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d')
+    date = request.args.get('date', TODAY_DATE)
+    day_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d')
     try: 
-        day_heart = pd.DataFrame(today_json['activities-heart-intraday']['dataset'])
+        day_heart = pd.DataFrame(day_json['activities-heart-intraday']['dataset'])
     except KeyError:
         return redirect('/authenticate')
     
     # display heart rate on chosen date
+    # if no data
+    if len(day_heart) == 0:
+        day_heart['time'] = date
+        day_heart['value'] = 0
     day_heart.time = pd.to_datetime(str(date) + ' ' + day_heart.time)
     day_heart = day_heart.rename(columns={'time': 'Time', 'value': 'Heart Rate'})
     day_fig = px.line(day_heart, x='Time', y='Heart Rate', markers=True)
