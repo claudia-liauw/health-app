@@ -19,6 +19,7 @@ db_path = "data/users.db"
 
 @app.route("/")
 @login_required
+@auth_required
 def steps():
     # get user ID and access token
     fitbit_id = session['fitbit_id']
@@ -69,6 +70,7 @@ def steps():
 
 @app.route("/sleep")
 @login_required
+@auth_required
 def sleep():
     # get user ID and access token
     fitbit_id = session['fitbit_id']
@@ -111,6 +113,7 @@ def sleep():
 
 @app.route("/heart-rate", methods=["GET", "POST"])
 @login_required
+@auth_required
 def heart_rate():
     # get user ID and access token
     fitbit_id = session['fitbit_id']

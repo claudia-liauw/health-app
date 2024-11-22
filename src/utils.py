@@ -25,6 +25,21 @@ def login_required(f):
 
     return decorated_function
 
+def auth_required(f):
+    """
+    Decorate routes to require authetication.
+
+    https://flask.palletsprojects.com/en/latest/patterns/viewdecorators/
+    """
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("fitbit_id") is None:
+            return redirect("/authenticate")
+        return f(*args, **kwargs)
+
+    return decorated_function
+
 class TimeSeriesDataset(Dataset):
     def __init__(self, data, value_col='Heart Rate', time_col='Time', 
                  interval_value=5, interval_unit='s', interpolation_limit=11,
