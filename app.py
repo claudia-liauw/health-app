@@ -269,7 +269,7 @@ def profile():
         ori_sleep_goal = goals[0][2]
     
     if request.method == "POST":
-        # if empty, set to existing data
+        # if goal is "create one", will return empty, otherwise set to original value
         step_goal = request.form['step'] or ori_step_goal
         sleep_goal = request.form['sleep'] or ori_sleep_goal
 
