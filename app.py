@@ -7,6 +7,7 @@ from src.utils import *
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
 import urllib.parse
+import datetime
 
 app = Flask(__name__)
 
@@ -15,7 +16,8 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-db_path = "data/users.db"
+DB_PATH = "data/users.db"
+TODAY_DATE = datetime.date.today()
 
 @app.route("/")
 @login_required
@@ -26,8 +28,7 @@ def steps():
     access_token = session['access_token']
 
     # retrieve today's data via fitbit API
-    date = '2024-10-10'
-    today_json = retrieve_data('steps', fitbit_id, access_token, date, '1d')
+    today_json = retrieve_data('steps', fitbit_id, access_token, TODAY_DATE, '1d')
     try: 
         total_steps = today_json['activities-steps'][0]['value']
     except KeyError:
@@ -46,10 +47,12 @@ def steps():
     else:
         target = '<p>Target not yet reached.</p>'
 
-    # display today's steps by hour
-    today_steps = pd.DataFrame(today_json['activities-steps-intraday']['dataset'])
-    today_steps.time = pd.to_datetime(date + ' ' + today_steps.time)
-    hourly_steps = today_steps.groupby(pd.Grouper(key='time', freq='h')).sum().reset_index()
+    # display steps by hour on chosen date
+    date = request.args.get('date', TODAY_DATE)
+    day_json = retrieve_data('steps', fitbit_id, access_token, date, '1d')
+    day_steps = pd.DataFrame(day_json['activities-steps-intraday']['dataset'])
+    day_steps.time = pd.to_datetime(str(date) + ' ' + day_steps.time)
+    hourly_steps = day_steps.groupby(pd.Grouper(key='time', freq='h')).sum().reset_index()
     hourly_steps = hourly_steps.rename(columns={'time': 'Hour', 'value': 'Steps'})
     hourly_fig = px.bar(hourly_steps, x='Hour', y='Steps')
 
@@ -65,6 +68,7 @@ def steps():
     return render_template("steps.html",
                            steps=total_steps,
                            target=target,
+                           date=date,
                            hourly_fig=hourly_fig.to_html(full_html=False),
                            daily_fig=daily_fig.to_html(full_html=False))
 
@@ -77,15 +81,14 @@ def sleep():
     access_token = session['access_token']
 
     # retrieve today's data via fitbit API
-    date = '2024-10-17'
-    today_json = retrieve_data('sleep', fitbit_id, access_token, date, version=1.2)
+    today_json = retrieve_data('sleep', fitbit_id, access_token, TODAY_DATE, version=1.2)
     try: 
         hours_slept = np.round(today_json['summary']['totalMinutesAsleep'] / 60, 2)
     except KeyError:
         return redirect('/authenticate')
     
     # check if target is met
-    with sqlite3.connect(db_path) as db:
+    with sqlite3.connect(DB_PATH) as db:
         sleep_goal = db.execute(
             "SELECT sleep_goal FROM profile WHERE username = ?", (session['user_id'],)
         ).fetchall()
@@ -98,6 +101,7 @@ def sleep():
         target = '<p>Sleep target not reached.</p>'
 
     # retrieve week data via fitbit API and display
+    date = request.args.get('date', TODAY_DATE)
     date = pd.Timestamp(date) 
     start_date = date - pd.Timedelta('7 days')
     week_sleep = []
@@ -109,6 +113,7 @@ def sleep():
     return render_template("sleep.html", 
                            hours_slept=hours_slept,
                            target=target,
+                           date=date,
                            fig=fig.to_html(full_html=False))
 
 @app.route("/heart-rate", methods=["GET", "POST"])
@@ -119,18 +124,18 @@ def heart_rate():
     fitbit_id = session['fitbit_id']
     access_token = session['access_token']
     
-    # retrieve today's data via fitbit API
+    # retrieve data on chosen date via fitbit API
     date = '2024-10-10'
     today_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d')
     try: 
-        today_heart = pd.DataFrame(today_json['activities-heart-intraday']['dataset'])
+        day_heart = pd.DataFrame(today_json['activities-heart-intraday']['dataset'])
     except KeyError:
         return redirect('/authenticate')
     
-    # display today's heart rate
-    today_heart.time = pd.to_datetime(date + ' ' + today_heart.time)
-    today_heart = today_heart.rename(columns={'time': 'Time', 'value': 'Heart Rate'})
-    today_fig = px.line(today_heart, x='Time', y='Heart Rate', markers=True)
+    # display heart rate on chosen date
+    day_heart.time = pd.to_datetime(str(date) + ' ' + day_heart.time)
+    day_heart = day_heart.rename(columns={'time': 'Time', 'value': 'Heart Rate'})
+    day_fig = px.line(day_heart, x='Time', y='Heart Rate', markers=True)
 
     # retrieve week data via fitbit API and display
     week_json = retrieve_data('heart', fitbit_id, access_token, date, period='7d')
@@ -151,14 +156,16 @@ def heart_rate():
             model_kwargs={"task_name": "reconstruction"},  # For anomaly detection, we will load MOMENT in `reconstruction` mode
             local_files_only=True,  # Whether or not to only look at local files (i.e., do not try to download the model).
         )
-        anomalies = get_anomalies(today_heart, model, anomaly_thresh=5).reset_index(drop=True)
+        anomalies = get_anomalies(day_heart, model, anomaly_thresh=5).reset_index(drop=True)
         return render_template("heart.html", tables=[anomalies.to_html(classes='data', header='true')],
-                               today_fig=today_fig.to_html(full_html=False),
+                               date=date,
+                               day_fig=day_fig.to_html(full_html=False),
                                week_fig=week_fig.to_html(full_html=False))
     
     else:
         return render_template("heart.html", tables=None, 
-                               today_fig=today_fig.to_html(full_html=False),
+                               date=date,
+                               day_fig=day_fig.to_html(full_html=False),
                                week_fig=week_fig.to_html(full_html=False))
 
 @app.route("/register", methods=["GET", "POST"])
@@ -182,7 +189,7 @@ def register():
             return render_template("register.html", invalid="Passwords do not match!")
 
         hash = generate_password_hash(password)
-        with sqlite3.connect(db_path) as db:
+        with sqlite3.connect(DB_PATH) as db:
             try:
                 db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash))
                 db.execute("""INSERT INTO profile (username, step_goal, sleep_goal) 
@@ -214,7 +221,7 @@ def login():
             return render_template("login.html", invalid="Must provide password!")
 
         # Query database for username
-        with sqlite3.connect(db_path) as db:
+        with sqlite3.connect(DB_PATH) as db:
             rows = db.execute(
                 "SELECT * FROM users WHERE username = ?", (request.form.get("username"),)
             ).fetchall()
@@ -249,7 +256,7 @@ def logout():
 @login_required
 def profile():
     username = session['user_id']
-    with sqlite3.connect(db_path) as db:
+    with sqlite3.connect(DB_PATH) as db:
         goals = db.execute(
             "SELECT * FROM profile WHERE username = ?", (username,)
         ).fetchall()
@@ -262,7 +269,7 @@ def profile():
         step_goal = request.form['step'] or ori_step_goal
         sleep_goal = request.form['sleep'] or ori_sleep_goal
 
-        with sqlite3.connect(db_path) as db:
+        with sqlite3.connect(DB_PATH) as db:
             db.execute("UPDATE profile SET step_goal = ?, sleep_goal = ? WHERE username = ?", 
                        (step_goal, sleep_goal, username))
             db.commit()

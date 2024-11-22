@@ -5,7 +5,13 @@
 {% endblock %}
 
 {% block main %}
-    {{ today_fig|safe }}
+    <form action="/heart-rate" method="get">
+        <div class="mb-3">
+            <input autocomplete="off" class="form-control mx-auto w-auto" name="date" type="date" value="{{ date }}"">
+        </div>
+        <button class="btn btn-primary" type="submit">Display</button>
+    </form>
+    {{ day_fig|safe }}
     {{ week_fig|safe }}
     <form action="/heart-rate" method="post">
         <button class="btn btn-primary" type="submit">Generate Anomaly Report</button>
