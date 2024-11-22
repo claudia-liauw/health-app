@@ -42,17 +42,20 @@ def steps():
     step_goal = step_goal[0][0]
     if step_goal == 'Create one':
         target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
-        step_goal = ''
+        step_goal_fmt = ''
     else:
-        if int(total_steps) >= int(step_goal):
+        step_goal_fmt = '/' + step_goal
+        step_goal = int(step_goal)
+        if int(total_steps) >= step_goal:
             target = '<p>Target reached!</p>'
         else:
             target = '<p>Target not yet reached.</p>'
-        step_goal = '/' + step_goal
 
-    # display steps by hour on chosen date
+    # retrieve chosen date data via fitbit API
     date = request.args.get('date', TODAY_DATE)
     day_json = retrieve_data('steps', fitbit_id, access_token, date, '1d')
+
+    # display steps by hour
     day_steps = pd.DataFrame(day_json['activities-steps-intraday']['dataset'])
     day_steps.time = pd.to_datetime(str(date) + ' ' + day_steps.time)
     hourly_steps = day_steps.groupby(pd.Grouper(key='time', freq='h')).sum().reset_index()
@@ -62,15 +65,23 @@ def steps():
     # retrieve week data via fitbit API
     week_json = retrieve_data('steps', fitbit_id, access_token, date, '7d')
 
-    # display week's steps
+    # display week's steps and whether target has been reached
     week_steps = pd.DataFrame(week_json['activities-steps'])
     week_steps['Steps'] = pd.to_numeric(week_steps.value)
     week_steps = week_steps.rename(columns={'dateTime': 'Date'})
-    daily_fig = px.bar(week_steps, x='Date', y='Steps')
+    if step_goal == 'Create one':
+        daily_fig = px.bar(week_steps, x='Date', y='Steps')
+    else:
+        week_steps['Target Reached'] = week_steps.Steps > step_goal
+        daily_fig = px.bar(week_steps, x='Date', y='Steps', color='Target Reached', 
+                    color_discrete_map={True: px.colors.qualitative.Plotly[2], 
+                                        False: px.colors.qualitative.Plotly[1]})
+        daily_fig.add_hline(y=step_goal, line_dash="dash")
+        daily_fig.update_layout(showlegend=False)
     
     return render_template("steps.html",
                            steps=total_steps,
-                           step_goal=step_goal,
+                           step_goal=step_goal_fmt,
                            target=target,
                            date=date,
                            hourly_fig=hourly_fig.to_html(full_html=False),
@@ -99,15 +110,16 @@ def sleep():
     sleep_goal = sleep_goal[0][0]
     if sleep_goal == 'Create one':
         target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
-        sleep_goal = ''
+        sleep_goal_fmt = ''
     else:
-        if hours_slept >= float(sleep_goal):
+        sleep_goal_fmt = '/' + sleep_goal + 'h'
+        sleep_goal = float(sleep_goal)
+        if hours_slept >= sleep_goal:
             target = '<p>Sleep target reached!</p>'
         else:
             target = '<p>Sleep target not reached.</p>'
-        sleep_goal = '/' + sleep_goal + 'h'
 
-    # retrieve week data via fitbit API and display
+    # retrieve week data via fitbit API
     date = request.args.get('date', TODAY_DATE)
     date = pd.Timestamp(date) 
     start_date = date - pd.Timedelta('7 days')
@@ -115,11 +127,22 @@ def sleep():
     for day in pd.date_range(start_date, date):
         day_json = retrieve_data('sleep', fitbit_id, access_token, day.date(), version=1.2)
         week_sleep.append({'Date': day.date(), 'Total Minutes Asleep': day_json['summary']['totalMinutesAsleep']})
-    fig = px.bar(week_sleep, x='Date', y='Total Minutes Asleep')
+    
+    # display week sleep and whether target has been reached
+    if sleep_goal == 'Create one':
+        fig = px.bar(week_sleep, x='Date', y='Total Minutes Asleep')
+    else:
+        week_sleep = pd.DataFrame(week_sleep)
+        week_sleep['Target Reached'] = week_sleep['Total Minutes Asleep'] > (sleep_goal * 60)
+        fig = px.bar(week_sleep, x='Date', y='Total Minutes Asleep', color='Target Reached', 
+                     color_discrete_map={True: px.colors.qualitative.Plotly[2], 
+                                         False: px.colors.qualitative.Plotly[1]})
+        fig.add_hline(y=sleep_goal*60, line_dash="dash")
+        fig.update_layout(showlegend=False)
 
     return render_template("sleep.html", 
                            hours_slept=hours_slept,
-                           sleep_goal=sleep_goal,
+                           sleep_goal=sleep_goal_fmt,
                            target=target,
                            date=str(date.date()),
                            fig=fig.to_html(full_html=False))
