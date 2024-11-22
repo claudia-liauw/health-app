@@ -147,6 +147,8 @@ def sleep():
                            date=str(date.date()),
                            fig=fig.to_html(full_html=False))
 
+heart_date = [TODAY_DATE]
+
 @app.route("/heart-rate", methods=["GET", "POST"])
 @login_required
 @auth_required
@@ -156,7 +158,8 @@ def heart_rate():
     access_token = session['access_token']
     
     # retrieve data on chosen date via fitbit API
-    date = request.args.get('date', TODAY_DATE)
+    date = request.args.get('date', heart_date[0])
+    heart_date[0] = date # store queried date
     day_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d')
     try: 
         day_heart = pd.DataFrame(day_json['activities-heart-intraday']['dataset'])
