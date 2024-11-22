@@ -42,10 +42,13 @@ def steps():
     step_goal = step_goal[0][0]
     if step_goal == 'Create one':
         target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
-    elif int(total_steps) >= int(step_goal):
-        target = '<p>Target reached!</p>'
+        step_goal = ''
     else:
-        target = '<p>Target not yet reached.</p>'
+        if int(total_steps) >= int(step_goal):
+            target = '<p>Target reached!</p>'
+        else:
+            target = '<p>Target not yet reached.</p>'
+        step_goal = '/' + step_goal
 
     # display steps by hour on chosen date
     date = request.args.get('date', TODAY_DATE)
@@ -67,6 +70,7 @@ def steps():
     
     return render_template("steps.html",
                            steps=total_steps,
+                           step_goal=step_goal,
                            target=target,
                            date=date,
                            hourly_fig=hourly_fig.to_html(full_html=False),
@@ -95,10 +99,13 @@ def sleep():
     sleep_goal = sleep_goal[0][0]
     if sleep_goal == 'Create one':
         target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
-    elif hours_slept >= float(sleep_goal):
-        target = '<p>Sleep target reached!</p>'
+        sleep_goal = ''
     else:
-        target = '<p>Sleep target not reached.</p>'
+        if hours_slept >= float(sleep_goal):
+            target = '<p>Sleep target reached!</p>'
+        else:
+            target = '<p>Sleep target not reached.</p>'
+        sleep_goal = '/' + sleep_goal + 'h'
 
     # retrieve week data via fitbit API and display
     date = request.args.get('date', TODAY_DATE)
@@ -112,8 +119,9 @@ def sleep():
 
     return render_template("sleep.html", 
                            hours_slept=hours_slept,
+                           sleep_goal=sleep_goal,
                            target=target,
-                           date=date,
+                           date=str(date.date()),
                            fig=fig.to_html(full_html=False))
 
 @app.route("/heart-rate", methods=["GET", "POST"])
