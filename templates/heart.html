@@ -16,6 +16,7 @@
     <form action="/heart-rate" method="post">
         <button class="btn btn-primary" type="submit">Generate Anomaly Report</button>
     </form>
+    <br>
     {% if tables %}
         {% for table in tables %}
             {{ table|safe }}

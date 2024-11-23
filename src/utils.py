@@ -96,7 +96,7 @@ class TimeSeriesDataset(Dataset):
         return seq, self.masks[idx]
     
 
-def get_anomalies(data, model, anomaly_thresh=20):
+def get_anomalies(data, model):
     '''Construct TimeSeriesDataset and feed into model. 
     Anomaly score is calculated from the mean absolute percentage error compared to the true signal.
     Output: a dataframe with timestamps where the anomaly score exceeds the anomaly threshold.'''
@@ -114,10 +114,10 @@ def get_anomalies(data, model, anomaly_thresh=20):
     anomaly_scores = np.abs(trues - preds) / preds * 100
 
     anomalies = pd.DataFrame({'Time': dataset.times[:len(trues)],
-                              'Recorded': trues.round(1), 
-                              'Predicted': preds.round(1), 
+                              'Recorded HR': trues.round(1), 
+                              'Predicted HR': preds.round(1), 
                               'Anomaly Score': anomaly_scores.round(1)})
-    return anomalies.loc[anomalies['Anomaly Score'] > anomaly_thresh]
+    return anomalies
 
 def retrieve_data(data_type, user_id, access_token, date, period='', version=1):
     '''Retrieve Fitbit data using GET.'''
@@ -130,7 +130,7 @@ def retrieve_data(data_type, user_id, access_token, date, period='', version=1):
     return response.json()
 
 class AppAuthenticator:
-    '''Generate PKCE values and state (functions by ChatGPT).'''
+    '''Generate PKCE values and state.'''
     def generate_code_verifier(self, length=128):
         verifier = secrets.token_urlsafe(length)
         return verifier[:128]

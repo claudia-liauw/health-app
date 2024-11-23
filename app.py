@@ -3,6 +3,7 @@ from flask_session import Session
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from src.utils import *
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
@@ -147,8 +148,6 @@ def sleep():
                            date=str(date.date()),
                            fig=fig.to_html(full_html=False))
 
-heart_date = [TODAY_DATE]
-
 @app.route("/heart-rate", methods=["GET", "POST"])
 @login_required
 @auth_required
@@ -158,8 +157,8 @@ def heart_rate():
     access_token = session['access_token']
     
     # retrieve data on chosen date via fitbit API
-    date = request.args.get('date', heart_date[0])
-    heart_date[0] = date # store queried date
+    date = request.args.get('date', session['heart_date'])
+    session['heart_date'] = date # store queried date
     day_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d')
     try: 
         day_heart = pd.DataFrame(day_json['activities-heart-intraday']['dataset'])
@@ -194,8 +193,26 @@ def heart_rate():
             model_kwargs={"task_name": "reconstruction"},  # For anomaly detection, we will load MOMENT in `reconstruction` mode
             local_files_only=True,  # Whether or not to only look at local files (i.e., do not try to download the model).
         )
-        anomalies = get_anomalies(day_heart, model, anomaly_thresh=5).reset_index(drop=True)
-        return render_template("heart.html", tables=[anomalies.to_html(classes='data', header='true')],
+        # generate anomaly table
+        anomalies = get_anomalies(day_heart, model).reset_index(drop=True)
+        anomaly_thresh = 5
+
+        # plot anomalies on graph
+        anomalies['Anomaly'] = anomalies['Anomaly Score'] > anomaly_thresh
+        day_fig = go.Figure()
+        day_fig.add_trace(go.Scatter(x=anomalies.Time, y=anomalies['Recorded HR'],
+                                     mode='lines+markers',
+                                     name='Heart Rate'))
+        day_fig.add_trace(go.Scatter(x=anomalies.loc[anomalies.Anomaly, 'Time'], 
+                                     y=anomalies.loc[anomalies.Anomaly, 'Recorded HR'],
+                                     mode='markers',
+                                     name='Anomaly'))
+        day_fig.update_layout(showlegend=False)
+
+        anomalies = anomalies[anomalies['Anomaly']].drop(columns='Anomaly')
+
+        return render_template("heart.html", 
+                               tables=[anomalies.to_html(index=False, classes='data', header='true')],
                                date=date,
                                day_fig=day_fig.to_html(full_html=False),
                                week_fig=week_fig.to_html(full_html=False))
@@ -272,6 +289,7 @@ def login():
 
         # Remember which user has logged in
         session["user_id"] = rows[0][0]
+        session['heart_date'] = TODAY_DATE
 
         # Redirect user to authenticate
         return redirect("/authenticate")
