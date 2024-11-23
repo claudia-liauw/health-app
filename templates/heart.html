@@ -14,14 +14,15 @@
     {{ day_fig|safe }}
     {{ week_fig|safe }}
     <form action="/heart-rate" method="post">
-        <p>Anomaly Threshold</p>
         <div class="mb-3">
-            <input autocomplete="off" class="form-control mx-auto w-auto" name="thresh" type="number" value="{{ thresh }}"">
+            <input autocomplete="off" class="form-control mx-auto w-auto" name="thresh" type="number" 
+            placeholder="Threshold (Default: 5)" min=1>
         </div>
         <button class="btn btn-primary" type="submit">Generate Anomaly Report</button>
     </form>
     <br>
     {% if tables %}
+        <p>Anomaly Threshold: {{ thresh }}</p>
         {% for table in tables %}
             {{ table|safe }}
         {% endfor %}
