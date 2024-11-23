@@ -45,7 +45,7 @@ def steps():
         target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
         step_goal_fmt = ''
     else:
-        step_goal_fmt = '/' + step_goal
+        step_goal_fmt = '/' + str(step_goal)
         step_goal = int(step_goal)
         if int(total_steps) >= step_goal:
             target = '<p>Target reached!</p>'
@@ -113,7 +113,7 @@ def sleep():
         target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
         sleep_goal_fmt = ''
     else:
-        sleep_goal_fmt = '/' + sleep_goal + 'h'
+        sleep_goal_fmt = '/' + str(sleep_goal) + 'h'
         sleep_goal = float(sleep_goal)
         if hours_slept >= sleep_goal:
             target = '<p>Sleep target reached!</p>'
@@ -198,9 +198,8 @@ def heart_rate():
         anomaly_thresh = request.form['thresh']
         try:
             anomaly_thresh = int(anomaly_thresh)
+            assert anomaly_thresh > 0
         except:
-            anomaly_thresh = 5
-        if anomaly_thresh <= 0:
             anomaly_thresh = 5
 
         # plot anomalies on graph
@@ -330,9 +329,23 @@ def profile():
         ori_sleep_goal = goals[0][2]
     
     if request.method == "POST":
-        # if goal is "create one", will return empty, otherwise set to original value
+        # if goal is "create one", will return empty, otherwise will already be set to original value
         step_goal = request.form['step'] or ori_step_goal
         sleep_goal = request.form['sleep'] or ori_sleep_goal
+
+        if step_goal != 'Create one':
+            try:
+                step_goal = int(step_goal)
+                assert step_goal >= 0
+            except:
+                step_goal = 'Create one'
+        
+        if sleep_goal != 'Create one':
+            try:
+                sleep_goal = float(sleep_goal)
+                assert sleep_goal >= 0
+            except:
+                sleep_goal = 'Create one'
 
         with sqlite3.connect(DB_PATH) as db:
             db.execute("UPDATE profile SET step_goal = ?, sleep_goal = ? WHERE username = ?", 
