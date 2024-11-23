@@ -195,7 +195,7 @@ def heart_rate():
         )
         # generate anomaly table
         anomalies = get_anomalies(day_heart, model).reset_index(drop=True)
-        anomaly_thresh = 5
+        anomaly_thresh = int(request.form['thresh'])
 
         # plot anomalies on graph
         anomalies['Anomaly'] = anomalies['Anomaly Score'] > anomaly_thresh
@@ -214,12 +214,15 @@ def heart_rate():
         return render_template("heart.html", 
                                tables=[anomalies.to_html(index=False, classes='data', header='true')],
                                date=date,
+                               thresh=anomaly_thresh,
                                day_fig=day_fig.to_html(full_html=False),
                                week_fig=week_fig.to_html(full_html=False))
     
     else:
-        return render_template("heart.html", tables=None, 
+        return render_template("heart.html", 
+                               tables=None, 
                                date=date,
+                               thresh=5,
                                day_fig=day_fig.to_html(full_html=False),
                                week_fig=week_fig.to_html(full_html=False))
 
