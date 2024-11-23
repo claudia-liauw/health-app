@@ -365,7 +365,6 @@ def callback():
     if state != session['auth_params']['state']:
         return 'Error: does not match original state', 400
 
-    print('callback')
     response = requests.post('https://api.fitbit.com/oauth2/token',
                              headers={'Authorization': '',
                                       'Content-Type': 'application/x-www-form-urlencoded'},
@@ -377,3 +376,6 @@ def callback():
     session['access_token'] = response.json()['access_token']
     session['fitbit_id'] = response.json()['user_id']
     return redirect("/")
+
+if __name__ == '__main__': 
+    app.run(host='localhost', debug=True) 
