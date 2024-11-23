@@ -1,10 +1,23 @@
 nav .navbar-brand .yellow
 {
-    color: #f5b82e;
+    color: #ffd573;
 }
 nav .navbar-brand .green
 {
-    color: #2e944b;
+    color: #52ff83;
+}
+
+nav .navbar-brand .white
+{
+    color: #eeeeee;
+}
+
+.nav-link{
+    color: #eeeeee;
+}
+
+.nav-link:hover{
+    color: #acacac;
 }
 
 table {
