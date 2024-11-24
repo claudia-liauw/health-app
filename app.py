@@ -54,6 +54,12 @@ def steps():
 
     # retrieve chosen date data via fitbit API
     date = request.args.get('date', TODAY_DATE)
+    try:
+        datetime.datetime.strptime(date, "%Y-%m-%d")
+    except: # if date does not match format
+        date = TODAY_DATE
+    if pd.Timestamp(date).date() > TODAY_DATE: # if date in the future
+        date = TODAY_DATE
     day_json = retrieve_data('steps', fitbit_id, access_token, date, '1d')
 
     # display steps by hour
@@ -122,7 +128,13 @@ def sleep():
 
     # retrieve week data via fitbit API
     date = request.args.get('date', TODAY_DATE)
-    date = pd.Timestamp(date) 
+    try:
+        datetime.datetime.strptime(date, "%Y-%m-%d")
+        date = pd.Timestamp(date)
+    except: # if date does not match format
+        date = pd.Timestamp(TODAY_DATE)
+    if date.date() > TODAY_DATE: # if in the future
+        date = pd.Timestamp(TODAY_DATE)
     start_date = date - pd.Timedelta('7 days')
     week_sleep = []
     for day in pd.date_range(start_date, date):
@@ -158,6 +170,12 @@ def heart_rate():
     
     # retrieve data on chosen date via fitbit API
     date = request.args.get('date', session['heart_date'])
+    try:
+        datetime.datetime.strptime(date, "%Y-%m-%d")
+    except: # if date does not match format
+        date = TODAY_DATE
+    if pd.Timestamp(date).date() > TODAY_DATE: # if date in the future
+        date = TODAY_DATE
     session['heart_date'] = date # store queried date
     day_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d')
     try: 
@@ -181,7 +199,7 @@ def heart_rate():
         date = week_json['activities-heart'][day]['dateTime']
         try:
             resting_hr = week_json['activities-heart'][day]['value']['restingHeartRate']
-        except KeyError:
+        except KeyError: # set to 0 if no resting HR
             resting_hr = 0
         week_heart.append({'Date': date, 'Resting HR': resting_hr})
     week_fig = px.bar(week_heart, x='Date', y='Resting HR')
@@ -219,6 +237,7 @@ def heart_rate():
         return render_template("heart.html", 
                                tables=[anomalies.to_html(index=False, classes='data', header='true')],
                                date=date,
+                               data_exists=True,
                                thresh=anomaly_thresh,
                                day_fig=day_fig.to_html(full_html=False),
                                week_fig=week_fig.to_html(full_html=False))
@@ -227,6 +246,7 @@ def heart_rate():
         return render_template("heart.html", 
                                tables=None, 
                                date=date,
+                               data_exists=len(day_heart)>0,
                                thresh='',
                                day_fig=day_fig.to_html(full_html=False),
                                week_fig=week_fig.to_html(full_html=False))

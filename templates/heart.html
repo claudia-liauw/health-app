@@ -13,13 +13,15 @@
     </form>
     {{ day_fig|safe }}
     {{ week_fig|safe }}
-    <form action="/heart-rate" method="post">
-        <div class="mb-3">
-            <input autocomplete="off" class="form-control mx-auto w-auto" name="thresh" type="number" 
-            placeholder="Threshold (Default: 5)" min=1>
-        </div>
-        <button class="btn btn-primary" type="submit">Generate Anomaly Report</button>
-    </form>
+    {% if data_exists %}
+        <form action="/heart-rate" method="post">
+            <div class="mb-3">
+                <input autocomplete="off" class="form-control mx-auto w-auto" name="thresh" type="number" 
+                placeholder="Threshold (Default: 5)" min=1>
+            </div>
+            <button class="btn btn-primary" type="submit">Generate Anomaly Report</button>
+        </form>
+    {% endif %}
     <br>
     {% if tables %}
         <p>Anomaly Threshold: {{ thresh }}</p>
