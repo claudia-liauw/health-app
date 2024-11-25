@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template, session, redirect, flash
 from flask_session import Session
+import os
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -20,6 +21,18 @@ Session(app)
 DB_PATH = "data/users.db"
 TODAY_DATE = datetime.date.today()
 
+# create database if it doesn't exist
+if not os.path.exists(DB_PATH):
+    with sqlite3.connect(DB_PATH) as con:
+        con.execute('''CREATE TABLE users(
+                    username NOT NULL UNIQUE, 
+                    hash NOT NULL)''')
+        con.execute('''CREATE TABLE profile(
+                    username NOT NULL UNIQUE, 
+                    step_goal NOT NULL,
+                    sleep_goal NOT NULL,
+                    FOREIGN KEY(username) REFERENCES users(username))''')
+
 @app.route("/")
 @login_required
 @auth_required
@@ -36,7 +49,7 @@ def steps():
         return redirect('/authenticate')
 
     # check if target is met
-    with sqlite3.connect("data/users.db") as db:
+    with sqlite3.connect(DB_PATH) as db:
         step_goal = db.execute(
             "SELECT step_goal FROM profile WHERE username = ?", (session['user_id'],)
         ).fetchall()
