@@ -1,5 +1,5 @@
 # Health is Wealth
-#### Video Demo:  <URL HERE>
+#### Video Demo:  [https://youtu.be/hkL0urMsANU](https://youtu.be/hkL0urMsANU)
 #### Description:
 A health tracker app for steps, sleep and heart rate with goal tracking for steps and sleep and anomaly detection for heart rate. Integrates with Fitbit API to retrieve data.
 
@@ -18,7 +18,7 @@ Based on: [Fitbit OAuth Tutorial](https://dev.fitbit.com/build/reference/web-api
 
 A PKCE code verifier and challenge and state are generated. Using the app's client ID, code challenge, state and requested scopes (activity, sleep and heart rate), the user is directed to the Fitbit authentication page. After allowing permissions, the user is redirected to the redirect URL.
 
-The redirect URL comes with arguments for the authorisation code and state. Using the authorisation code and the earlier generated code verifier, a POST request is sent to Fitbit servers to generate the access token. This also pulls the user's Fitbit ID. Both are stored in Session, hence permissions will have to be granted every time the user logs in.
+The redirect URL comes with arguments for the authorisation code and state. Using the authorisation code and the earlier generated code verifier, a POST request is sent to Fitbit servers to generate the access token. This also pulls the user's Fitbit ID. Both are stored in Session.
 
 ### Profile
 Profile displays the user's username, step goal and sleep goal as queried from the profile table. Goals are shown in a form for users to update with the current value as a placeholder. When goals have not been set, the placeholder shows the default value of "Create one". Users can set both goals or just one. If a field is left blank, the current value will be inserted back into the database. If an invalid value is entered, it will be set to "Create one".
@@ -46,7 +46,7 @@ The chosen date is stored in Session so that anomaly detection will use the same
 
 A dataframe is constructed for heart rate on the chosen date. Plotly graphs are shown displaying heart rate on the chosen date and the resting heart rate for the past 7 days. When resting heart rate is not available, it is set to 0.
 
-A button to generate anomaly report will only be shown when there is heart rate data. When the button to generate the anomaly report is clicked, the [pre-trained anomaly detection MOMENT model](https://huggingface.co/AutonLab/MOMENT-1-large) is imported. There was no further fine-tuning or validation as that is not the focus of this project. The constructed dataframe is passed into the TimeSeriesDataset. Taking the first and last available timestamps, it constructs a new dataset with an interval of 5s, interpolating values up to 1 min. Then a list of sequences is constructed with a length of 512 each, as that is the input size to the MOMENT model. Only sequences with at least 50% data are used, using a mask to keep track.
+A button to generate anomaly report will only be shown when there is heart rate data. When the button to generate the anomaly report is clicked, the [pre-trained anomaly detection MOMENT model](https://huggingface.co/AutonLab/MOMENT-1-large) is imported. There was no further fine-tuning or validation as that is not the focus of this project, thus the results are not to be taken seriously. The constructed dataframe is passed into the TimeSeriesDataset. Taking the first and last available timestamps, it constructs a new dataset with an interval of 5s, interpolating values up to 1 min. Then a list of sequences is constructed with a length of 512 each, as that is the input size to the MOMENT model. Only sequences with at least 50% data are used, using a mask to keep track.
 
 The dataset is loaded into a PyTorch DataLoader and the MOMENT model is used for inference. It ignores masked data. The output is compared against the true signal and an anomaly score is calculated from the mean absolute percentage error. A dataframe is shown with timestamps where the anomaly score exceeds the anomaly threshold. Anomalies are also highlighted on the heart rate graph. The user can adjust the threshold. If an invalid value is provided, the threshold defaults to 5.
 
