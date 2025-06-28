@@ -47,7 +47,7 @@ RUN python -m pip install -r requirements.txt
 # COPY . .
 
 # Expose the port that the application listens on.
-EXPOSE 5000
+EXPOSE 8000
 
 # Run the application.
-CMD ["python", "app.py"]
+CMD gunicorn app:app --bind 0.0.0.0:${PORT:-8000}

@@ -432,5 +432,5 @@ def callback():
     session['fitbit_id'] = response.json()['user_id']
     return redirect("/")
 
-if __name__ == '__main__': 
-    app.run(host='0.0.0.0', debug=True) 
+# if __name__ == '__main__': 
+#     app.run(host='0.0.0.0', debug=True) 

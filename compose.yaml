@@ -12,7 +12,7 @@ services:
     build:
       context: .
     ports:
-      - 5000:5000
+      - 8000:8000
     volumes:
       - ./data/users.db:/app/data/users.db
 
