@@ -392,7 +392,7 @@ def profile():
                                sleep_goal=ori_sleep_goal)
 
 CLIENT_ID = '23PQH4'
-REDIRECT_URL = 'http://localhost:5000/callback'
+REDIRECT_URL = 'https://intuitive-friendship-production-9a1a.up.railway.app/callback'
 
 @app.route("/authenticate")
 @login_required
