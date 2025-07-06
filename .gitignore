@@ -1,5 +1,4 @@
 data
-data_fitbit
 env
 __pycache__
 flask_session

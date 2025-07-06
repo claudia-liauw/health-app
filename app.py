@@ -50,12 +50,12 @@ def steps():
 
         total_steps = 13162
         
-        day_steps = pd.read_csv('data_fitbit/fitbit_apr/hourlySteps_merged.csv')
+        day_steps = pd.read_csv('data/fitbit_apr/hourlySteps_merged.csv')
         day_steps = day_steps.rename(columns={'ActivityHour': 'Hour', 'StepTotal': 'Steps'})
         day_steps.Hour = pd.to_datetime(day_steps.Hour)
         hourly_steps = day_steps.loc[(day_steps.Id == day_steps.Id.unique()[0]) & (day_steps.Hour < '2016-04-13')]
 
-        daily_steps = pd.read_csv('data_fitbit/fitbit_apr/dailySteps_merged.csv')
+        daily_steps = pd.read_csv('data/fitbit_apr/dailySteps_merged.csv')
         daily_steps = daily_steps.rename(columns={'ActivityDay': 'Date', 'StepTotal': 'Steps'})
         daily_steps.Date = pd.to_datetime(daily_steps.Date)
         week_steps = daily_steps.loc[(daily_steps.Id == daily_steps.Id.unique()[0]) & (daily_steps.Date < '2016-04-19')]
@@ -150,7 +150,7 @@ def sleep():
         
         hours_slept = np.round(700 / 60, 2)
 
-        daily_sleep = pd.read_csv('data_fitbit/fitbit_apr/sleepDay_merged.csv')
+        daily_sleep = pd.read_csv('data/fitbit_apr/sleepDay_merged.csv')
         daily_sleep = daily_sleep.rename(columns={'SleepDay': 'Date', 'TotalMinutesAsleep': 'Total Minutes Asleep'})
         daily_sleep.Date = pd.to_datetime(daily_sleep.Date)
         week_sleep = daily_sleep.loc[(daily_sleep.Id == daily_sleep.Id.unique()[0]) & (daily_sleep.Date < '2016-04-19')]
@@ -231,7 +231,7 @@ def heart_rate():
 
         date = datetime.date(2016, 4, 12)
 
-        heart_data = pd.read_csv('data_fitbit/fitbit_apr/heartrate_seconds_merged.csv')
+        heart_data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
         heart_data = heart_data.rename(columns={'Value': 'Heart Rate'})
         heart_data.Time = pd.to_datetime(heart_data.Time)
         day_heart = heart_data.loc[(heart_data.Id == heart_data.Id.unique()[0]) & (heart_data.Time < '2016-04-13')]
