@@ -26,7 +26,8 @@ if not os.path.exists(DB_PATH):
     with sqlite3.connect(DB_PATH) as con:
         con.execute('''CREATE TABLE users(
                     username NOT NULL UNIQUE, 
-                    hash NOT NULL)''')
+                    hash NOT NULL,
+                    has_fitbit NOT NULL)''')
         con.execute('''CREATE TABLE profile(
                     username NOT NULL UNIQUE, 
                     step_goal NOT NULL,
@@ -271,6 +272,7 @@ def register():
         username = request.form['username']
         password = request.form['password']
         confirmation = request.form['confirmation']
+        has_fitbit = 'fitbit' in request.form
 
         # Ensure username is submitted
         if not username:
@@ -287,7 +289,7 @@ def register():
         hash = generate_password_hash(password)
         with sqlite3.connect(DB_PATH) as db:
             try:
-                db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash))
+                db.execute("INSERT INTO users (username, hash, has_fitbit) VALUES (?, ?, ?)", (username, hash, has_fitbit))
                 db.execute("""INSERT INTO profile (username, step_goal, sleep_goal) 
                            VALUES (?, 'Create one', 'Create one')""", (username,))
                 db.commit()
@@ -331,6 +333,11 @@ def login():
         # Remember which user has logged in
         session["user_id"] = rows[0][0]
         session['heart_date'] = TODAY_DATE
+
+        # Set fitbit id if user has no fitbit
+        has_fitbit = rows[0][2]
+        if not has_fitbit:
+            session['fitbit_id'] = 'no_fitbit'
 
         # Redirect user to authenticate
         return redirect("/authenticate")
