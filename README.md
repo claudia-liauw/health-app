@@ -3,6 +3,15 @@
 #### Description:
 A health tracker app for steps, sleep and heart rate with goal tracking for steps and sleep and anomaly detection for heart rate. Integrates with Fitbit API to retrieve data.
 
+## How to run
+Website: [endless-bobbette-claudia-liauw-a9f407dd.koyeb.app/](https://endless-bobbette-claudia-liauw-a9f407dd.koyeb.app/)
+
+Does not include anomaly detection feature due to size limitations. To run with this feature, switch to branch `pre-deploy` and run locally:
+```
+docker compose up --build
+```
+Note: This will not work unless the redirect URL is updated within `app.py` and on the Fitbit app manager.
+
 ## Database
 * Users table: username and hash
 * Profile table: username, step goal and sleep goal
@@ -49,8 +58,3 @@ A dataframe is constructed for heart rate on the chosen date. Plotly graphs are 
 A button to generate anomaly report will only be shown when there is heart rate data. When the button to generate the anomaly report is clicked, the [pre-trained anomaly detection MOMENT model](https://huggingface.co/AutonLab/MOMENT-1-large) is imported. There was no further fine-tuning or validation as that is not the focus of this project, thus the results are not to be taken seriously. The constructed dataframe is passed into the TimeSeriesDataset. Taking the first and last available timestamps, it constructs a new dataset with an interval of 5s, interpolating values up to 1 min. Then a list of sequences is constructed with a length of 512 each, as that is the input size to the MOMENT model. Only sequences with at least 50% data are used, using a mask to keep track.
 
 The dataset is loaded into a PyTorch DataLoader and the MOMENT model is used for inference. It ignores masked data. The output is compared against the true signal and an anomaly score is calculated from the mean absolute percentage error. A dataframe is shown with timestamps where the anomaly score exceeds the anomaly threshold. Anomalies are also highlighted on the heart rate graph. The user can adjust the threshold. If an invalid value is provided, the threshold defaults to 5.
-
-## How to run
-```
-docker compose up --build
-```
