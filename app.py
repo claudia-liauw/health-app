@@ -18,7 +18,7 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-DB_PATH = "/tmp/users.db"
+DB_PATH = "data/users.db"
 TODAY_DATE = datetime.date.today()
 
 # create database if it doesn't exist
@@ -217,52 +217,52 @@ def heart_rate():
         week_heart.append({'Date': date, 'Resting HR': resting_hr})
     week_fig = px.bar(week_heart, x='Date', y='Resting HR')
     
-    # if request.method == "POST":
-    #     from momentfm import MOMENTPipeline
-    #     model = MOMENTPipeline.from_pretrained(
-    #         "AutonLab/MOMENT-1-large", 
-    #         model_kwargs={"task_name": "reconstruction"},  # For anomaly detection, we will load MOMENT in `reconstruction` mode
-    #         local_files_only=True,  # Whether or not to only look at local files (i.e., do not try to download the model).
-    #     )
-    #     # generate anomaly table
-    #     anomalies = get_anomalies(day_heart, model).reset_index(drop=True)
-    #     anomaly_thresh = request.form['thresh']
-    #     try:
-    #         anomaly_thresh = int(anomaly_thresh)
-    #         assert anomaly_thresh > 0
-    #     except:
-    #         anomaly_thresh = 5
+    if request.method == "POST":
+        from momentfm import MOMENTPipeline
+        model = MOMENTPipeline.from_pretrained(
+            "AutonLab/MOMENT-1-large", 
+            model_kwargs={"task_name": "reconstruction"},  # For anomaly detection, we will load MOMENT in `reconstruction` mode
+            local_files_only=True,  # Whether or not to only look at local files (i.e., do not try to download the model).
+        )
+        # generate anomaly table
+        anomalies = get_anomalies(day_heart, model).reset_index(drop=True)
+        anomaly_thresh = request.form['thresh']
+        try:
+            anomaly_thresh = int(anomaly_thresh)
+            assert anomaly_thresh > 0
+        except:
+            anomaly_thresh = 5
 
-    #     # plot anomalies on graph
-    #     anomalies['Anomaly'] = anomalies['Anomaly Score'] > anomaly_thresh
-    #     day_fig = go.Figure()
-    #     day_fig.add_trace(go.Scatter(x=anomalies.Time, y=anomalies['Recorded HR'],
-    #                                  mode='lines+markers',
-    #                                  name='Heart Rate'))
-    #     day_fig.add_trace(go.Scatter(x=anomalies.loc[anomalies.Anomaly, 'Time'], 
-    #                                  y=anomalies.loc[anomalies.Anomaly, 'Recorded HR'],
-    #                                  mode='markers',
-    #                                  name='Anomaly'))
-    #     day_fig.update_layout(showlegend=False)
+        # plot anomalies on graph
+        anomalies['Anomaly'] = anomalies['Anomaly Score'] > anomaly_thresh
+        day_fig = go.Figure()
+        day_fig.add_trace(go.Scatter(x=anomalies.Time, y=anomalies['Recorded HR'],
+                                     mode='lines+markers',
+                                     name='Heart Rate'))
+        day_fig.add_trace(go.Scatter(x=anomalies.loc[anomalies.Anomaly, 'Time'], 
+                                     y=anomalies.loc[anomalies.Anomaly, 'Recorded HR'],
+                                     mode='markers',
+                                     name='Anomaly'))
+        day_fig.update_layout(showlegend=False)
 
-    #     anomalies = anomalies[anomalies['Anomaly']].drop(columns='Anomaly')
+        anomalies = anomalies[anomalies['Anomaly']].drop(columns='Anomaly')
 
-    #     return render_template("heart.html", 
-    #                            tables=[anomalies.to_html(index=False, classes='data', header='true')],
-    #                            date=date,
-    #                            data_exists=True,
-    #                            thresh=anomaly_thresh,
-    #                            day_fig=day_fig.to_html(full_html=False),
-    #                            week_fig=week_fig.to_html(full_html=False))
-    # 
-    # else:
-    return render_template("heart.html", 
-                            tables=None, 
-                            date=date,
-                            data_exists=len(day_heart)>0,
-                            thresh='',
-                            day_fig=day_fig.to_html(full_html=False),
-                            week_fig=week_fig.to_html(full_html=False))
+        return render_template("heart.html", 
+                               tables=[anomalies.to_html(index=False, classes='data', header='true')],
+                               date=date,
+                               data_exists=True,
+                               thresh=anomaly_thresh,
+                               day_fig=day_fig.to_html(full_html=False),
+                               week_fig=week_fig.to_html(full_html=False))
+    
+    else:
+        return render_template("heart.html", 
+                               tables=None, 
+                               date=date,
+                               data_exists=len(day_heart)>0,
+                               thresh='',
+                               day_fig=day_fig.to_html(full_html=False),
+                               week_fig=week_fig.to_html(full_html=False))
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -392,7 +392,7 @@ def profile():
                                sleep_goal=ori_sleep_goal)
 
 CLIENT_ID = '23PQH4'
-REDIRECT_URL = 'https://endless-bobbette-claudia-liauw-a9f407dd.koyeb.app/callback'
+REDIRECT_URL = 'http://localhost:5000/callback'
 
 @app.route("/authenticate")
 @login_required
