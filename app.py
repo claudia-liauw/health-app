@@ -391,20 +391,12 @@ def profile():
                                step_goal=ori_step_goal, 
                                sleep_goal=ori_sleep_goal)
 
-@app.route("/authenticate")
-@login_required
-def authenticate():
-    if request.method == 'POST':
-        session['fitbit_id'] = 'no_fitbit'
-    else:
-        return render_template("authenticate.html")
-
 CLIENT_ID = '23PQH4'
 REDIRECT_URL = 'http://localhost:5000/callback'
 
-@app.route("/fitbit")
+@app.route("/authenticate")
 @login_required
-def fitbit():
+def authenticate():
     session['auth_params'] = AppAuthenticator()()
     query_params = {
         'response_type': 'code',
