@@ -51,11 +51,6 @@ A button to generate anomaly report will only be shown when there is heart rate 
 The dataset is loaded into a PyTorch DataLoader and the MOMENT model is used for inference. It ignores masked data. The output is compared against the true signal and an anomaly score is calculated from the mean absolute percentage error. A dataframe is shown with timestamps where the anomaly score exceeds the anomaly threshold. Anomalies are also highlighted on the heart rate graph. The user can adjust the threshold. If an invalid value is provided, the threshold defaults to 5.
 
 ## How to run
-Install dependencies:
 ```
-pip install -r requirements.txt
-```
-Run app:
-```
-python app.py
+docker compose up --build
 ```
