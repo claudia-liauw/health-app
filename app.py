@@ -40,14 +40,45 @@ if not os.path.exists(DB_PATH):
 def steps():
     # get user ID and access token
     fitbit_id = session['fitbit_id']
-    access_token = session['access_token']
+    
+    if fitbit_id == 'no_fitbit':
+        total_steps = '' # TODO
+        hourly_steps = '' # TODO
+        week_steps = '' # TODO
 
-    # retrieve today's data via fitbit API
-    today_json = retrieve_data('steps', fitbit_id, access_token, TODAY_DATE, '1d')
-    try: 
-        total_steps = today_json['activities-steps'][0]['value']
-    except KeyError:
-        return redirect('/authenticate')
+    else:
+        access_token = session['access_token']
+
+        # retrieve today's data via fitbit API
+        today_json = retrieve_data('steps', fitbit_id, access_token, TODAY_DATE, '1d')
+        try: 
+            total_steps = today_json['activities-steps'][0]['value']
+        except KeyError:
+            return redirect('/authenticate')
+
+        # retrieve chosen date data via fitbit API
+        date = request.args.get('date', TODAY_DATE)
+        try:
+            datetime.datetime.strptime(date, "%Y-%m-%d")
+        except: # if date does not match format
+            date = TODAY_DATE
+        if pd.Timestamp(date).date() > TODAY_DATE: # if date in the future
+            date = TODAY_DATE
+        day_json = retrieve_data('steps', fitbit_id, access_token, date, '1d')
+
+        # get steps by hour
+        day_steps = pd.DataFrame(day_json['activities-steps-intraday']['dataset'])
+        day_steps.time = pd.to_datetime(str(date) + ' ' + day_steps.time)
+        hourly_steps = day_steps.groupby(pd.Grouper(key='time', freq='h')).sum().reset_index()
+        hourly_steps = hourly_steps.rename(columns={'time': 'Hour', 'value': 'Steps'})
+    
+        # retrieve week data via fitbit API
+        week_json = retrieve_data('steps', fitbit_id, access_token, date, '7d')
+
+        # get week's steps
+        week_steps = pd.DataFrame(week_json['activities-steps'])
+        week_steps['Steps'] = pd.to_numeric(week_steps.value)
+        week_steps = week_steps.rename(columns={'dateTime': 'Date'})
 
     # check if target is met
     with sqlite3.connect(DB_PATH) as db:
@@ -66,30 +97,10 @@ def steps():
         else:
             target = '<p>Target not yet reached.</p>'
 
-    # retrieve chosen date data via fitbit API
-    date = request.args.get('date', TODAY_DATE)
-    try:
-        datetime.datetime.strptime(date, "%Y-%m-%d")
-    except: # if date does not match format
-        date = TODAY_DATE
-    if pd.Timestamp(date).date() > TODAY_DATE: # if date in the future
-        date = TODAY_DATE
-    day_json = retrieve_data('steps', fitbit_id, access_token, date, '1d')
-
     # display steps by hour
-    day_steps = pd.DataFrame(day_json['activities-steps-intraday']['dataset'])
-    day_steps.time = pd.to_datetime(str(date) + ' ' + day_steps.time)
-    hourly_steps = day_steps.groupby(pd.Grouper(key='time', freq='h')).sum().reset_index()
-    hourly_steps = hourly_steps.rename(columns={'time': 'Hour', 'value': 'Steps'})
     hourly_fig = px.bar(hourly_steps, x='Hour', y='Steps')
 
-    # retrieve week data via fitbit API
-    week_json = retrieve_data('steps', fitbit_id, access_token, date, '7d')
-
-    # display week's steps and whether target has been reached
-    week_steps = pd.DataFrame(week_json['activities-steps'])
-    week_steps['Steps'] = pd.to_numeric(week_steps.value)
-    week_steps = week_steps.rename(columns={'dateTime': 'Date'})
+    # display week's steps and if target has been met
     if step_goal == 'Create one':
         daily_fig = px.bar(week_steps, x='Date', y='Steps')
     else:
@@ -114,14 +125,35 @@ def steps():
 def sleep():
     # get user ID and access token
     fitbit_id = session['fitbit_id']
-    access_token = session['access_token']
 
-    # retrieve today's data via fitbit API
-    today_json = retrieve_data('sleep', fitbit_id, access_token, TODAY_DATE, version=1.2)
-    try: 
-        hours_slept = np.round(today_json['summary']['totalMinutesAsleep'] / 60, 2)
-    except KeyError:
-        return redirect('/authenticate')
+    if fitbit_id == 'no_fitbit':
+        hours_slept = '' # TODO
+        week_sleep = '' # TODO
+
+    else:
+        access_token = session['access_token']
+
+        # retrieve today's data via fitbit API
+        today_json = retrieve_data('sleep', fitbit_id, access_token, TODAY_DATE, version=1.2)
+        try: 
+            hours_slept = np.round(today_json['summary']['totalMinutesAsleep'] / 60, 2)
+        except KeyError:
+            return redirect('/authenticate')
+        
+         # retrieve week data via fitbit API
+        date = request.args.get('date', TODAY_DATE)
+        try:
+            datetime.datetime.strptime(date, "%Y-%m-%d")
+            date = pd.Timestamp(date)
+        except: # if date does not match format
+            date = pd.Timestamp(TODAY_DATE)
+        if date.date() > TODAY_DATE: # if in the future
+            date = pd.Timestamp(TODAY_DATE)
+        start_date = date - pd.Timedelta('7 days')
+        week_sleep = []
+        for day in pd.date_range(start_date, date):
+            day_json = retrieve_data('sleep', fitbit_id, access_token, day.date(), version=1.2)
+            week_sleep.append({'Date': day.date(), 'Total Minutes Asleep': day_json['summary']['totalMinutesAsleep']})
     
     # check if target is met
     with sqlite3.connect(DB_PATH) as db:
@@ -139,21 +171,6 @@ def sleep():
             target = '<p>Sleep target reached!</p>'
         else:
             target = '<p>Sleep target not reached.</p>'
-
-    # retrieve week data via fitbit API
-    date = request.args.get('date', TODAY_DATE)
-    try:
-        datetime.datetime.strptime(date, "%Y-%m-%d")
-        date = pd.Timestamp(date)
-    except: # if date does not match format
-        date = pd.Timestamp(TODAY_DATE)
-    if date.date() > TODAY_DATE: # if in the future
-        date = pd.Timestamp(TODAY_DATE)
-    start_date = date - pd.Timedelta('7 days')
-    week_sleep = []
-    for day in pd.date_range(start_date, date):
-        day_json = retrieve_data('sleep', fitbit_id, access_token, day.date(), version=1.2)
-        week_sleep.append({'Date': day.date(), 'Total Minutes Asleep': day_json['summary']['totalMinutesAsleep']})
     
     # display week sleep and whether target has been reached
     if sleep_goal == 'Create one':
@@ -180,22 +197,39 @@ def sleep():
 def heart_rate():
     # get user ID and access token
     fitbit_id = session['fitbit_id']
-    access_token = session['access_token']
-    
-    # retrieve data on chosen date via fitbit API
-    date = request.args.get('date', session['heart_date'])
-    try:
-        datetime.datetime.strptime(date, "%Y-%m-%d")
-    except: # if date does not match format
-        date = TODAY_DATE
-    if pd.Timestamp(date).date() > TODAY_DATE: # if date in the future
-        date = TODAY_DATE
-    session['heart_date'] = date # store queried date
-    day_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d')
-    try: 
-        day_heart = pd.DataFrame(day_json['activities-heart-intraday']['dataset'])
-    except KeyError:
-        return redirect('/authenticate')
+
+    if fitbit_id == 'no_fitbit':
+        day_heart = '' # TODO
+        week_heart = '' # TODO
+
+    else:
+        access_token = session['access_token']
+        
+        # retrieve data on chosen date via fitbit API
+        date = request.args.get('date', session['heart_date'])
+        try:
+            datetime.datetime.strptime(date, "%Y-%m-%d")
+        except: # if date does not match format
+            date = TODAY_DATE
+        if pd.Timestamp(date).date() > TODAY_DATE: # if date in the future
+            date = TODAY_DATE
+        session['heart_date'] = date # store queried date
+        day_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d')
+        try: 
+            day_heart = pd.DataFrame(day_json['activities-heart-intraday']['dataset'])
+        except KeyError:
+            return redirect('/authenticate')
+        
+        # retrieve week data via fitbit API
+        week_json = retrieve_data('heart', fitbit_id, access_token, date, period='7d')
+        week_heart = []
+        for day in range(7):
+            date = week_json['activities-heart'][day]['dateTime']
+            try:
+                resting_hr = week_json['activities-heart'][day]['value']['restingHeartRate']
+            except KeyError: # set to 0 if no resting HR
+                resting_hr = 0
+            week_heart.append({'Date': date, 'Resting HR': resting_hr})
     
     # display heart rate on chosen date
     # if no data
@@ -206,16 +240,7 @@ def heart_rate():
     day_heart = day_heart.rename(columns={'time': 'Time', 'value': 'Heart Rate'})
     day_fig = px.line(day_heart, x='Time', y='Heart Rate', markers=True)
 
-    # retrieve week data via fitbit API and display
-    week_json = retrieve_data('heart', fitbit_id, access_token, date, period='7d')
-    week_heart = []
-    for day in range(7):
-        date = week_json['activities-heart'][day]['dateTime']
-        try:
-            resting_hr = week_json['activities-heart'][day]['value']['restingHeartRate']
-        except KeyError: # set to 0 if no resting HR
-            resting_hr = 0
-        week_heart.append({'Date': date, 'Resting HR': resting_hr})
+    # display week data
     week_fig = px.bar(week_heart, x='Date', y='Resting HR')
     
     # if request.method == "POST":
@@ -340,7 +365,7 @@ def login():
             session['fitbit_id'] = 'no_fitbit'
 
         # Redirect user to authenticate
-        return redirect("/authenticate")
+        return redirect("/")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
