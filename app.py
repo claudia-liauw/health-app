@@ -215,8 +215,12 @@ def heart_rate():
     fitbit_id = session['fitbit_id']
 
     if fitbit_id == 'no_fitbit':
-        day_heart = '' # TODO
-        week_heart = '' # TODO
+        date = datetime.date(2016, 4, 12)
+
+        heart_data = pd.read_csv('data_fitbit/fitbit_apr/heartrate_seconds_merged.csv')
+        heart_data = heart_data.rename(columns={'Value': 'Heart Rate'})
+        heart_data.Time = pd.to_datetime(heart_data.Time)
+        day_heart = heart_data.loc[(heart_data.Id == heart_data.Id.unique()[0]) & (heart_data.Time < '2016-04-13')]
 
     else:
         access_token = session['access_token']
@@ -236,6 +240,13 @@ def heart_rate():
         except KeyError:
             return redirect('/authenticate')
         
+        # if no data
+        if len(day_heart) == 0:
+            day_heart['time'] = date
+            day_heart['value'] = 0
+        day_heart.time = pd.to_datetime(str(date) + ' ' + day_heart.time)
+        day_heart = day_heart.rename(columns={'time': 'Time', 'value': 'Heart Rate'})
+        
         # retrieve week data via fitbit API
         week_json = retrieve_data('heart', fitbit_id, access_token, date, period='7d')
         week_heart = []
@@ -248,16 +259,14 @@ def heart_rate():
             week_heart.append({'Date': date, 'Resting HR': resting_hr})
     
     # display heart rate on chosen date
-    # if no data
-    if len(day_heart) == 0:
-        day_heart['time'] = date
-        day_heart['value'] = 0
-    day_heart.time = pd.to_datetime(str(date) + ' ' + day_heart.time)
-    day_heart = day_heart.rename(columns={'time': 'Time', 'value': 'Heart Rate'})
     day_fig = px.line(day_heart, x='Time', y='Heart Rate', markers=True)
 
     # display week data
-    week_fig = px.bar(week_heart, x='Date', y='Resting HR')
+    if fitbit_id == 'no_fitbit':
+        week_fig_html = "Resting heart rate: No data"
+    else:
+        week_fig = px.bar(week_heart, x='Date', y='Resting HR')
+        week_fig_html = week_fig.to_html(full_html=False)
     
     # if request.method == "POST":
     #     from momentfm import MOMENTPipeline
@@ -304,7 +313,7 @@ def heart_rate():
                             data_exists=len(day_heart)>0,
                             thresh='',
                             day_fig=day_fig.to_html(full_html=False),
-                            week_fig=week_fig.to_html(full_html=False))
+                            week_fig=week_fig_html)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
