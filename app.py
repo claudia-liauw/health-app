@@ -18,7 +18,7 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-DB_PATH = "/tmp/users.db"
+DB_PATH = "data/users.db"
 TODAY_DATE = datetime.date.today()
 
 # create database if it doesn't exist
@@ -392,7 +392,7 @@ def profile():
                                sleep_goal=ori_sleep_goal)
 
 CLIENT_ID = '23PQH4'
-REDIRECT_URL = 'https://endless-bobbette-claudia-liauw-a9f407dd.koyeb.app/callback'
+REDIRECT_URL = 'http://localhost:5000/callback'
 
 @app.route("/authenticate")
 @login_required
@@ -432,5 +432,5 @@ def callback():
     session['fitbit_id'] = response.json()['user_id']
     return redirect("/")
 
-# if __name__ == '__main__': 
-#     app.run(host='0.0.0.0', debug=True) 
+if __name__ == '__main__': 
+    app.run(host='0.0.0.0', debug=True) 
