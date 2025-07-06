@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block main %}
+    <p>{{ warning }}</p>
     <p>Today's Steps: {{ steps }}{{ step_goal }}</p>
     {{ target|safe }}
     <form action="/" method="get">

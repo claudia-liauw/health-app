@@ -20,6 +20,7 @@ Session(app)
 
 DB_PATH = "data/users.db"
 TODAY_DATE = datetime.date.today()
+WARNING = "WARNING: You are not connected to Fitbit. Certain features, such as the changing of dates, will not work."
 
 # create database if it doesn't exist
 if not os.path.exists(DB_PATH):
@@ -38,10 +39,13 @@ if not os.path.exists(DB_PATH):
 @login_required
 @auth_required
 def steps():
+    warning = ''
+
     # get user ID and access token
     fitbit_id = session['fitbit_id']
     
     if fitbit_id == 'no_fitbit':
+        warning = WARNING
         date = datetime.date(2016, 4, 12)
 
         total_steps = 13162
@@ -122,6 +126,7 @@ def steps():
         daily_fig.update_layout(showlegend=False)
     
     return render_template("steps.html",
+                           warning=warning,
                            steps=total_steps,
                            step_goal=step_goal_fmt,
                            target=target,
@@ -133,10 +138,14 @@ def steps():
 @login_required
 @auth_required
 def sleep():
+    warning = ''
+
     # get user ID and access token
     fitbit_id = session['fitbit_id']
 
     if fitbit_id == 'no_fitbit':
+        warning = WARNING
+
         date = pd.Timestamp('2016-04-17')
         
         hours_slept = np.round(700 / 60, 2)
@@ -200,7 +209,8 @@ def sleep():
         fig.add_hline(y=sleep_goal*60, line_dash="dash")
         fig.update_layout(showlegend=False)
 
-    return render_template("sleep.html", 
+    return render_template("sleep.html",
+                           warning=warning,
                            hours_slept=hours_slept,
                            sleep_goal=sleep_goal_fmt,
                            target=target,
@@ -211,10 +221,14 @@ def sleep():
 @login_required
 @auth_required
 def heart_rate():
+    warning = ''
+
     # get user ID and access token
     fitbit_id = session['fitbit_id']
 
     if fitbit_id == 'no_fitbit':
+        warning = WARNING
+
         date = datetime.date(2016, 4, 12)
 
         heart_data = pd.read_csv('data_fitbit/fitbit_apr/heartrate_seconds_merged.csv')
@@ -308,6 +322,7 @@ def heart_rate():
     # 
     # else:
     return render_template("heart.html", 
+                            warning=warning,
                             tables=None, 
                             date=date,
                             data_exists=len(day_heart)>0,
