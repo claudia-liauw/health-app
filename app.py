@@ -18,7 +18,7 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-DB_PATH = "data/users.db"
+DB_PATH = os.environ.get('DB_PATH', 'data/users.db')
 TODAY_DATE = datetime.date.today()
 WARNING = "WARNING: You are not connected to Fitbit. Certain features, such as the changing of dates, will not work."
 
@@ -464,7 +464,7 @@ def profile():
                                sleep_goal=ori_sleep_goal)
 
 CLIENT_ID = '23PQH4'
-REDIRECT_URL = 'http://localhost:5000/callback'
+REDIRECT_URL = os.environ.get('REDIRECT_URL', 'http://localhost:5000/callback')
 
 @app.route("/authenticate")
 @login_required
@@ -504,5 +504,6 @@ def callback():
     session['fitbit_id'] = response.json()['user_id']
     return redirect("/")
 
-if __name__ == '__main__': 
-    app.run(host='0.0.0.0', debug=True) 
+if not os.environ.get('KOYEB'):
+    if __name__ == '__main__': 
+        app.run(host='0.0.0.0', debug=True) 
