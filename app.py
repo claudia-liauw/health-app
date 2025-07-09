@@ -10,6 +10,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
 import urllib.parse
 import datetime
+from sqlalchemy import create_engine, text
 
 app = Flask(__name__)
 
@@ -18,22 +19,27 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-DB_PATH = os.environ.get('DB_PATH', 'data/users.db')
+DB_PATH = os.environ.get('DB_PATH', 'sqlite:///data/users.db')
 TODAY_DATE = datetime.date.today()
 WARNING = "WARNING: You are not connected to Fitbit. Certain features, such as the changing of dates, will not work."
 
-# create database if it doesn't exist
-if not os.path.exists(DB_PATH):
-    with sqlite3.connect(DB_PATH) as con:
-        con.execute('''CREATE TABLE users(
-                    username NOT NULL UNIQUE, 
-                    hash NOT NULL,
-                    has_fitbit NOT NULL)''')
-        con.execute('''CREATE TABLE profile(
-                    username NOT NULL UNIQUE, 
-                    step_goal NOT NULL,
-                    sleep_goal NOT NULL,
-                    FOREIGN KEY(username) REFERENCES users(username))''')
+engine = create_engine(DB_PATH)
+# create tables if they don't exist
+with engine.connect() as con:
+    con.execute(text("""
+                     CREATE TABLE IF NOT EXISTS users(
+                        username NOT NULL UNIQUE, 
+                        hash NOT NULL,
+                        has_fitbit NOT NULL)
+                     """))
+    con.execute(text("""
+                     CREATE TABLE IF NOT EXISTS profile(
+                        username NOT NULL UNIQUE, 
+                        step_goal NOT NULL,
+                        sleep_goal NOT NULL,
+                        FOREIGN KEY(username) REFERENCES users(username))
+                     """))
+    con.commit()
 
 @app.route("/")
 @login_required
@@ -95,9 +101,10 @@ def steps():
         week_steps = week_steps.rename(columns={'dateTime': 'Date'})
 
     # check if target is met
-    with sqlite3.connect(DB_PATH) as db:
+    with engine.connect() as db:
         step_goal = db.execute(
-            "SELECT step_goal FROM profile WHERE username = ?", (session['user_id'],)
+            text("SELECT step_goal FROM profile WHERE username = :username"),
+            {"username": session['user_id']}
         ).fetchall()
     step_goal = step_goal[0][0]
     if step_goal == 'Create one':
@@ -181,9 +188,10 @@ def sleep():
             week_sleep.append({'Date': day.date(), 'Total Minutes Asleep': day_json['summary']['totalMinutesAsleep']})
     
     # check if target is met
-    with sqlite3.connect(DB_PATH) as db:
-        sleep_goal = db.execute(
-            "SELECT sleep_goal FROM profile WHERE username = ?", (session['user_id'],)
+    with engine.connect() as db:
+        sleep_goal = db.execute(text(
+            "SELECT sleep_goal FROM profile WHERE username = :username"), 
+            {"username": session['user_id']}
         ).fetchall()
     sleep_goal = sleep_goal[0][0]
     if sleep_goal == 'Create one':
@@ -352,11 +360,13 @@ def register():
             return render_template("register.html", invalid="Passwords do not match!")
 
         hash = generate_password_hash(password)
-        with sqlite3.connect(DB_PATH) as db:
+        with engine.connect() as db:
             try:
-                db.execute("INSERT INTO users (username, hash, has_fitbit) VALUES (?, ?, ?)", (username, hash, has_fitbit))
-                db.execute("""INSERT INTO profile (username, step_goal, sleep_goal) 
-                           VALUES (?, 'Create one', 'Create one')""", (username,))
+                db.execute(text("INSERT INTO users (username, hash, has_fitbit) VALUES (:username, :hash, :has_fitbit)"), 
+                           {"username": username, "hash": hash, "has_fitbit": has_fitbit})
+                db.execute(text("""INSERT INTO profile (username, step_goal, sleep_goal)
+                           VALUES (:username, 'Create one', 'Create one')"""),
+                           {"username": username})
                 db.commit()
                 return redirect("/")
             # If username already exists
@@ -384,9 +394,10 @@ def login():
             return render_template("login.html", invalid="Must provide password!")
 
         # Query database for username
-        with sqlite3.connect(DB_PATH) as db:
+        with engine.connect() as db:
             rows = db.execute(
-                "SELECT * FROM users WHERE username = ?", (request.form.get("username"),)
+                text("SELECT * FROM users WHERE username = :username"), 
+                {"username": request.form.get("username")}
             ).fetchall()
 
         # Ensure username exists and password is correct
@@ -425,9 +436,10 @@ def logout():
 @login_required
 def profile():
     username = session['user_id']
-    with sqlite3.connect(DB_PATH) as db:
+    with engine.connect() as db:
         goals = db.execute(
-            "SELECT * FROM profile WHERE username = ?", (username,)
+            text("SELECT * FROM profile WHERE username = :username"),
+            {"username": username}
         ).fetchall()
 
         ori_step_goal = goals[0][1]
@@ -452,9 +464,9 @@ def profile():
             except:
                 sleep_goal = 'Create one'
 
-        with sqlite3.connect(DB_PATH) as db:
-            db.execute("UPDATE profile SET step_goal = ?, sleep_goal = ? WHERE username = ?", 
-                       (step_goal, sleep_goal, username))
+        with engine.connect() as db:
+            db.execute(text("UPDATE profile SET step_goal = :step_goal, sleep_goal = :sleep_goal WHERE username = :username"), 
+                       {"step_goal": step_goal, "sleep_goal": sleep_goal, "username": username})
             db.commit()
         return redirect("/profile")
     else:
