@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block main %}
+    <p>{{ warning }}</p>
     <p>Hours slept: {{ hours_slept }}{{ sleep_goal }}</p>
     {{ target|safe }}
     <form action="/sleep" method="get">

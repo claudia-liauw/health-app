@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block main %}
+    <p>{{ warning }}</p>
     <form action="/heart-rate" method="get">
         <div class="mb-3">
             <input autocomplete="off" class="form-control mx-auto w-auto" name="date" type="date" value="{{ date }}"">
@@ -13,7 +14,10 @@
     </form>
     {{ day_fig|safe }}
     {{ week_fig|safe }}
+    <br>
+    <br>
     {% if data_exists %}
+        <p>Note: The below feature has been disabled due to size limitations.</p>
         <form action="/heart-rate" method="post">
             <div class="mb-3">
                 <input autocomplete="off" class="form-control mx-auto w-auto" name="thresh" type="number" 
