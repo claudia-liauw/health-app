@@ -28,15 +28,15 @@ engine = create_engine(DB_PATH)
 with engine.connect() as con:
     con.execute(text("""
                      CREATE TABLE IF NOT EXISTS users(
-                        username NOT NULL UNIQUE, 
-                        hash NOT NULL,
-                        has_fitbit NOT NULL)
+                        username TEXT NOT NULL UNIQUE, 
+                        hash TEXT NOT NULL,
+                        has_fitbit BOOL NOT NULL)
                      """))
     con.execute(text("""
                      CREATE TABLE IF NOT EXISTS profile(
-                        username NOT NULL UNIQUE, 
-                        step_goal NOT NULL,
-                        sleep_goal NOT NULL,
+                        username TEXT NOT NULL UNIQUE, 
+                        step_goal TEXT NOT NULL,
+                        sleep_goal TEXT NOT NULL,
                         FOREIGN KEY(username) REFERENCES users(username))
                      """))
     con.commit()
