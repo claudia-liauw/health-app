@@ -119,13 +119,15 @@ def auth_required(f):
 #                               'Anomaly Score': anomaly_scores.round(1)})
 #     return anomalies
 
-def retrieve_data(data_type, user_id, access_token, date, period='', version=1):
+def retrieve_data(data_type, user_id, access_token, date, period='', detail='', version=1):
     '''Retrieve Fitbit data using GET.'''
     if data_type in ['steps', 'heart']:
         data_type = 'activities/' + data_type
     if period:
         period = '/' + period
-    response = requests.get(f'https://api.fitbit.com/{version}/user/{user_id}/{data_type}/date/{date}{period}.json',
+    if detail:
+        detail = '/' + detail
+    response = requests.get(f'https://api.fitbit.com/{version}/user/{user_id}/{data_type}/date/{date}{period}{detail}.json',
                             headers={'Authorization': 'Bearer ' + access_token})
     return response.json()
 

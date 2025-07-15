@@ -64,7 +64,7 @@ def steps():
         access_token = session['access_token']
 
         # retrieve today's data via fitbit API
-        today_json = retrieve_data('steps', fitbit_id, access_token, TODAY_DATE, '1d')
+        today_json = retrieve_data('steps', fitbit_id, access_token, TODAY_DATE, period='1d')
         try: 
             total_steps = today_json['activities-steps'][0]['value']
         except KeyError:
@@ -78,7 +78,7 @@ def steps():
             date = TODAY_DATE
         if pd.Timestamp(date).date() > TODAY_DATE: # if date in the future
             date = TODAY_DATE
-        day_json = retrieve_data('steps', fitbit_id, access_token, date, '1d')
+        day_json = retrieve_data('steps', fitbit_id, access_token, date, period='1d', detail='1min')
 
         # get steps by hour
         day_steps = pd.DataFrame(day_json['activities-steps-intraday']['dataset'])
@@ -248,7 +248,7 @@ def heart_rate():
         if pd.Timestamp(date).date() > TODAY_DATE: # if date in the future
             date = TODAY_DATE
         session['heart_date'] = date # store queried date
-        day_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d')
+        day_json = retrieve_data('heart', fitbit_id, access_token, date, period='1d', detail='1min')
         try: 
             day_heart = pd.DataFrame(day_json['activities-heart-intraday']['dataset'])
         except KeyError:
