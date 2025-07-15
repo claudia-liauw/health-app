@@ -4,7 +4,7 @@
 A health tracker app for steps, sleep and heart rate with goal tracking for steps and sleep and anomaly detection for heart rate. Integrates with Fitbit API to retrieve data.
 
 ## How to run
-Website: [endless-bobbette-claudia-liauw-a9f407dd.koyeb.app/](https://endless-bobbette-claudia-liauw-a9f407dd.koyeb.app/)
+Website: [fellow-korry-claudia-hobby-a63e6d9c.koyeb.app](https://fellow-korry-claudia-hobby-a63e6d9c.koyeb.app/)
 
 Does not include anomaly detection feature due to size limitations. To run with this feature, switch to branch `pre-deploy` and run locally:
 ```
