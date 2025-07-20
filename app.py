@@ -23,6 +23,7 @@ DB_PATH = os.environ.get('DB_PATH', 'sqlite:///data/users.db')
 TODAY_DATE = datetime.date.today()
 WARNING = "WARNING: You are not connected to Fitbit. Certain features, such as the changing of dates, will not work."
 
+# Database
 engine = create_engine(DB_PATH)
 # create tables if they don't exist
 with engine.connect() as con:
@@ -41,6 +42,17 @@ with engine.connect() as con:
                      """))
     con.commit()
 
+# day_steps = pd.read_csv('data/fitbit_apr/hourlySteps_merged.csv')
+# day_steps.to_sql('day_steps', engine, index=False)
+# daily_steps = pd.read_csv('data/fitbit_apr/dailySteps_merged.csv')
+# daily_steps.to_sql('daily_steps', engine, index=False)
+# daily_sleep = pd.read_csv('data/fitbit_apr/sleepDay_merged.csv')
+# daily_sleep.to_sql('daily_sleep', engine, index=False)
+# heart_data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
+# heart_data = heart_data.iloc[:5000]
+# heart_data.to_sql('heart_data', engine, index=False)
+
+
 @app.route("/")
 @login_required
 @auth_required
@@ -55,13 +67,18 @@ def steps():
         date = datetime.date(2016, 4, 12)
 
         total_steps = 13162
-        
-        day_steps = pd.read_csv('data/fitbit_apr/hourlySteps_merged.csv')
+        if DB_PATH.startswith('sqlite'):
+            day_steps = pd.read_csv('data/fitbit_apr/hourlySteps_merged.csv')
+        else: 
+            day_steps = pd.read_sql_table('day_steps', con=engine)
         day_steps = day_steps.rename(columns={'ActivityHour': 'Hour', 'StepTotal': 'Steps'})
         day_steps.Hour = pd.to_datetime(day_steps.Hour)
         hourly_steps = day_steps.loc[(day_steps.Id == day_steps.Id.unique()[0]) & (day_steps.Hour < '2016-04-13')]
 
-        daily_steps = pd.read_csv('data/fitbit_apr/dailySteps_merged.csv')
+        if DB_PATH.startswith('sqlite'):
+            daily_steps = pd.read_csv('data/fitbit_apr/dailySteps_merged.csv')
+        else:
+            daily_steps = pd.read_sql_table('daily_steps', con=engine)
         daily_steps = daily_steps.rename(columns={'ActivityDay': 'Date', 'StepTotal': 'Steps'})
         daily_steps.Date = pd.to_datetime(daily_steps.Date)
         week_steps = daily_steps.loc[(daily_steps.Id == daily_steps.Id.unique()[0]) & (daily_steps.Date < '2016-04-19')]
@@ -157,7 +174,10 @@ def sleep():
         
         hours_slept = np.round(700 / 60, 2)
 
-        daily_sleep = pd.read_csv('data/fitbit_apr/sleepDay_merged.csv')
+        if DB_PATH.startswith('sqlite'):
+            daily_sleep = pd.read_csv('data/fitbit_apr/sleepDay_merged.csv')
+        else:
+            daily_sleep = pd.read_sql_table('daily_sleep', con=engine)
         daily_sleep = daily_sleep.rename(columns={'SleepDay': 'Date', 'TotalMinutesAsleep': 'Total Minutes Asleep'})
         daily_sleep.Date = pd.to_datetime(daily_sleep.Date)
         week_sleep = daily_sleep.loc[(daily_sleep.Id == daily_sleep.Id.unique()[0]) & (daily_sleep.Date < '2016-04-19')]
@@ -239,7 +259,10 @@ def heart_rate():
 
         date = datetime.date(2016, 4, 12)
 
-        heart_data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
+        if DB_PATH.startswith('sqlite'):
+            heart_data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
+        else:
+            heart_data = pd.read_sql_table('heart_data', con=engine)
         heart_data = heart_data.rename(columns={'Value': 'Heart Rate'})
         heart_data.Time = pd.to_datetime(heart_data.Time)
         day_heart = heart_data.loc[(heart_data.Id == heart_data.Id.unique()[0]) & (heart_data.Time < '2016-04-13')]
