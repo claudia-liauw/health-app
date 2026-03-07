@@ -2,6 +2,13 @@
 
 import os
 import tempfile
+
+# Use a temporary file-based SQLite DB for tests — must be set BEFORE importing
+# app so the engine is created with this path instead of the default data/users.db.
+_test_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+os.environ["DB_PATH"] = f"sqlite:///{_test_db.name}"
+_test_db.close()
+
 import pytest
 from app import app as flask_app, engine
 from sqlalchemy import text
