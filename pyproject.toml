@@ -1,0 +1,31 @@
+[project]
+name = "health-app"
+version = "0.1.0"
+description = "A health dashboard app using Fitbit data"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "flask==3.0.3",
+    "flask-session==0.8.0",
+    "gunicorn==23.0.0",
+    "numpy==1.25.2",
+    "pandas==2.2.3",
+    "plotly==5.24.1",
+    "matplotlib==3.9.2",
+    "seaborn==0.13.2",
+    "sqlalchemy==2.0.41",
+    "psycopg2-binary==2.9.10",
+    "requests==2.32.3",
+    "werkzeug==3.0.5",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel==6.29.5",
+    "jupyter==1.1.1",
+]
+ml = [
+    "torch==2.5.0",
+    "transformers==4.33.3",
+    "huggingface-hub==0.19.4",
+    "momentfm==0.1.1",
+]
