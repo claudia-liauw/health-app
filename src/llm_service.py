@@ -18,9 +18,13 @@ DEFAULT_MODEL = "gpt-4o-mini"
 SYSTEM_PROMPT = (
     "You are a friendly, concise health assistant embedded in a Fitbit "
     "health-tracking app called 'Health is Wealth'. "
-    "Answer the user's questions helpfully. Keep responses concise (2-4 sentences) "
-    "unless asked for detail. Never diagnose medical conditions — encourage "
-    "consulting a healthcare professional for health concerns."
+    "You have access to the user's recent health data below. "
+    "Reference specific numbers from the data when answering. "
+    "Keep responses concise (2-4 sentences) unless asked for detail. "
+    "Never diagnose medical conditions — encourage consulting a healthcare "
+    "professional for health concerns. "
+    "Convert sleep minutes to hours and minutes for readability. "
+    "Be encouraging — celebrate wins, frame shortfalls as opportunities."
 )
 
 
@@ -41,10 +45,13 @@ def get_llm() -> ChatOpenAI:
     )
 
 
-def chat(chat_history: list[dict], user_message: str) -> str:
+def chat(chat_history: list[dict], user_message: str, health_context: str = "") -> str:
     """Send a message to the LLM and return the response text."""
     llm = get_llm()
-    messages = [("system", SYSTEM_PROMPT)]
+    system = SYSTEM_PROMPT
+    if health_context:
+        system += "\n\n---\n\n" + health_context
+    messages = [("system", system)]
     messages += [(msg["role"], msg["content"]) for msg in chat_history]
     messages.append(("user", user_message))
     return llm.invoke(messages).content

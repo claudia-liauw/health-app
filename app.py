@@ -7,6 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from src.utils import *
 from src.llm_service import chat as llm_chat
+from src.health_context import build_health_context
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
 import urllib.parse
@@ -601,7 +602,8 @@ def chat_endpoint():
         session["chat_history"] = []
 
     try:
-        response_text = llm_chat(session["chat_history"], user_message)
+        health_context = build_health_context(session, engine, retrieve_data)
+        response_text = llm_chat(session["chat_history"], user_message, health_context)
 
         # Keep last 20 messages to limit session size
         session["chat_history"].append({"role": "user", "content": user_message})
