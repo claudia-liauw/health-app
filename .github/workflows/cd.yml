@@ -1,0 +1,24 @@
+name: CD (Koyeb)
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install and configure the Koyeb CLI
+        uses: koyeb-community/koyeb-actions@v2
+        with:
+          api_token: ${{ secrets.KOYEB_API_TOKEN }}
+
+      - name: Build and deploy the application to Koyeb
+        uses: koyeb/action-git-deploy@v1
+        with:
+          app-name: fellow-korry-claudia-hobby-a63e6d9c
+          service-name: health-app
+          service-ports: "5000:http"
+          service-routes: "/:5000"
+          git-builder: docker
+          git-docker-dockerfile: Dockerfile
