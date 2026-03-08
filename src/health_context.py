@@ -37,10 +37,18 @@ def _last_week_with_data(df, date_col="Date"):
     return df[(df[date_col] >= start) & (df[date_col] <= last_date)]
 
 
-# ── Demo data (CSV) ─────────────────────────────────────────────────────────
+# ── Demo data (CSV or SQL) ───────────────────────────────────────────────────
 
-def _demo_steps():
-    df = pd.read_csv("data/fitbit_apr/dailySteps_merged.csv")
+def _load_table(csv_path, sql_table, engine, db_path):
+    """Read from CSV if sqlite, otherwise from SQL table."""
+    if db_path.startswith("sqlite"):
+        return pd.read_csv(csv_path)
+    else:
+        return pd.read_sql_table(sql_table, con=engine)
+
+
+def _demo_steps(engine, db_path):
+    df = _load_table("data/fitbit_apr/dailySteps_merged.csv", "daily_steps", engine, db_path)
     df = df.rename(columns={"ActivityDay": "Date", "StepTotal": "Steps"})
     df.Date = pd.to_datetime(df.Date)
     uid = df.Id.unique()[0]
@@ -51,8 +59,8 @@ def _demo_steps():
     return df, period
 
 
-def _demo_sleep():
-    df = pd.read_csv("data/fitbit_apr/sleepDay_merged.csv")
+def _demo_sleep(engine, db_path):
+    df = _load_table("data/fitbit_apr/sleepDay_merged.csv", "daily_sleep", engine, db_path)
     df = df.rename(columns={"SleepDay": "Date", "TotalMinutesAsleep": "Minutes Asleep"})
     df.Date = pd.to_datetime(df.Date)
     uid = df.Id.unique()[0]
@@ -63,8 +71,8 @@ def _demo_sleep():
     return df, period
 
 
-def _demo_heart():
-    df = pd.read_csv("data/fitbit_apr/heartrate_seconds_merged.csv")
+def _demo_heart(engine, db_path):
+    df = _load_table("data/fitbit_apr/heartrate_seconds_merged.csv", "heart_data", engine, db_path)
     df = df.rename(columns={"Value": "Heart Rate"})
     df.Time = pd.to_datetime(df.Time)
     uid = df.Id.unique()[0]
@@ -140,7 +148,7 @@ def _live_heart(fitbit_id, access_token, date, retrieve_data):
 
 # ── Public API ───────────────────────────────────────────────────────────────
 
-def build_health_context(session, engine, retrieve_data_fn=None) -> str:
+def build_health_context(session, engine, db_path, retrieve_data_fn=None) -> str:
     """
     Build a concise text summary of the user's health data and goals.
 
@@ -165,7 +173,7 @@ def build_health_context(session, engine, retrieve_data_fn=None) -> str:
     # Steps
     try:
         if is_demo:
-            df, period = _demo_steps()
+            df, period = _demo_steps(engine, db_path)
         else:
             df, period = _live_steps(fitbit_id, access_token, today, retrieve_data_fn)
         parts.append(f"\n### Steps (data from {period})")
@@ -176,7 +184,7 @@ def build_health_context(session, engine, retrieve_data_fn=None) -> str:
     # Sleep
     try:
         if is_demo:
-            df, period = _demo_sleep()
+            df, period = _demo_sleep(engine, db_path)
         else:
             df, period = _live_sleep(fitbit_id, access_token, today, retrieve_data_fn)
         parts.append(f"\n### Sleep (data from {period})")
@@ -187,7 +195,7 @@ def build_health_context(session, engine, retrieve_data_fn=None) -> str:
     # Heart rate
     try:
         if is_demo:
-            df, period = _demo_heart()
+            df, period = _demo_heart(engine, db_path)
         else:
             df, period = _live_heart(fitbit_id, access_token, today, retrieve_data_fn)
         parts.append(f"\n### Heart Rate (data from {period})")

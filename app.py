@@ -602,7 +602,7 @@ def chat_endpoint():
         session["chat_history"] = []
 
     try:
-        health_context = build_health_context(session, engine, retrieve_data)
+        health_context = build_health_context(session, engine, DB_PATH, retrieve_data)
         response_text = llm_chat(session["chat_history"], user_message, health_context)
 
         # Keep last 20 messages to limit session size
