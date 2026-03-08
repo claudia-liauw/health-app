@@ -16,7 +16,7 @@ jobs:
       - name: Build and deploy the application to Koyeb
         uses: koyeb/action-git-deploy@v1
         with:
-          app-name: fellow-korry-claudia-hobby-a63e6d9c
+          app-name: fellow-korry
           service-name: health-app
           service-instance-type: free
           service-regions: was
