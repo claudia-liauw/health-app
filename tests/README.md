@@ -74,13 +74,16 @@ Verifies that both user types can log in and reach their respective dashboards.
 
 Verifies the `?date=YYYY-MM-DD` query parameter on all three dashboards.
 
-**Validation rules** (Fitbit users only):
+**Validation rules** (Fitbit users):
 - Missing → defaults to today.
 - Invalid format → falls back to today.
 - Future date → clamped to today.
 - Valid past date → used as-is.
 
-No-Fitbit users always see hardcoded demo dates regardless of the parameter.
+**Validation rules** (No-Fitbit users):
+- Missing → defaults to a demo date (`2016-04-12` for steps/heart, `2016-04-17` for sleep).
+- Valid date → data is filtered to that date from the sample CSVs.
+- Invalid format → falls back to the default demo date.
 
 | Test | What it checks |
 |---|---|
@@ -89,16 +92,23 @@ No-Fitbit users always see hardcoded demo dates regardless of the parameter.
 | `test_valid_past_date` | `?date=2025-01-15` → page loads, date appears in response. |
 | `test_invalid_date_does_not_crash` | `?date=not-a-date` → page still loads (falls back to today). |
 | `test_future_date_clamped` | `?date=2099-01-01` → that date does NOT appear in response. |
-| `test_no_fitbit_date_picker_ignored` | No-Fitbit user with `?date=2025-01-15` still sees demo date `2016-04-12`. |
+| `test_no_fitbit_default_date` | No-Fitbit user with no param sees default `2016-04-12` and 13 162 steps. |
+| `test_no_fitbit_change_date` | No-Fitbit user with `?date=2016-04-13` sees that date and 10 500 steps. |
+| `test_no_fitbit_invalid_date_falls_back` | No-Fitbit user with `?date=not-a-date` falls back to `2016-04-12`. |
+| `test_no_fitbit_date_with_no_data` | No-Fitbit user with a date outside CSV range → page still loads. |
 | **TestSleepDatePicker** | |
 | `test_valid_past_date` | `/sleep?date=2025-01-15` → loads, date in response. |
 | `test_invalid_date_does_not_crash` | `/sleep?date=bad` → page loads. |
-| `test_no_fitbit_shows_demo_date` | No-Fitbit user always sees `2016-04-17`. |
+| `test_no_fitbit_default_date` | No-Fitbit user with no param sees `2016-04-17`. |
+| `test_no_fitbit_change_date` | No-Fitbit user with `?date=2016-04-15` sees that date. |
+| `test_no_fitbit_invalid_date_falls_back` | No-Fitbit user with `?date=bad` falls back to `2016-04-17`. |
 | **TestHeartDatePicker** | |
 | `test_valid_past_date` | `/heart-rate?date=2025-01-15` → loads. |
 | `test_date_stored_in_session` | After `?date=2025-01-15`, revisiting without `?date` still shows `2025-01-15`. |
 | `test_invalid_date_does_not_crash` | `/heart-rate?date=xyz` → page loads. |
-| `test_no_fitbit_shows_demo_date` | No-Fitbit user always sees `2016-04-12`. |
+| `test_no_fitbit_default_date` | No-Fitbit user with no param sees `2016-04-12`. |
+| `test_no_fitbit_change_date` | No-Fitbit user with `?date=2016-04-12` sees that date. |
+| `test_no_fitbit_invalid_date_falls_back` | No-Fitbit user with `?date=xyz` falls back to `2016-04-12`. |
 
 ---
 

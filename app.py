@@ -22,7 +22,7 @@ Session(app)
 
 DB_PATH = os.environ.get('DB_PATH', 'sqlite:///data/users.db')
 TODAY_DATE = datetime.date.today()
-WARNING = "WARNING: You are not connected to Fitbit. Certain features, such as the changing of dates, will not work."
+WARNING = "WARNING: You are not connected to Fitbit. Data shown is sample data."
 
 # Database
 engine = create_engine(DB_PATH)
@@ -65,16 +65,26 @@ def steps():
     
     if fitbit_id == 'no_fitbit':
         warning = WARNING
-        date = datetime.date(2016, 4, 12)
 
-        total_steps = 13162
+        date_str = request.args.get('date', '2016-04-12')
+        try:
+            date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        except:
+            date = datetime.date(2016, 4, 12)
+
         if DB_PATH.startswith('sqlite'):
             day_steps = pd.read_csv('data/fitbit_apr/hourlySteps_merged.csv')
         else: 
             day_steps = pd.read_sql_table('day_steps', con=engine)
         day_steps = day_steps.rename(columns={'ActivityHour': 'Hour', 'StepTotal': 'Steps'})
         day_steps.Hour = pd.to_datetime(day_steps.Hour)
-        hourly_steps = day_steps.loc[(day_steps.Id == day_steps.Id.unique()[0]) & (day_steps.Hour < '2016-04-13')]
+        user_id = day_steps.Id.unique()[0]
+        next_date = date + datetime.timedelta(days=1)
+        hourly_steps = day_steps.loc[
+            (day_steps.Id == user_id) &
+            (day_steps.Hour >= str(date)) &
+            (day_steps.Hour < str(next_date))
+        ]
 
         if DB_PATH.startswith('sqlite'):
             daily_steps = pd.read_csv('data/fitbit_apr/dailySteps_merged.csv')
@@ -82,8 +92,19 @@ def steps():
             daily_steps = pd.read_sql_table('daily_steps', con=engine)
         daily_steps = daily_steps.rename(columns={'ActivityDay': 'Date', 'StepTotal': 'Steps'})
         daily_steps.Date = pd.to_datetime(daily_steps.Date)
-        week_steps = daily_steps.loc[(daily_steps.Id == daily_steps.Id.unique()[0]) & (daily_steps.Date < '2016-04-19')]
+        user_daily = daily_steps.loc[daily_steps.Id == user_id]
 
+        # compute total steps for the chosen date
+        day_total = user_daily.loc[user_daily.Date.dt.date == date, 'Steps']
+        total_steps = int(day_total.values[0]) if len(day_total) > 0 else 0
+
+        # filter week steps (7 days ending on chosen date)
+        week_start = date - datetime.timedelta(days=6)
+        week_steps = user_daily.loc[
+            (user_daily.Date.dt.date >= week_start) &
+            (user_daily.Date.dt.date <= date)
+        ]
+        
     else:
         access_token = session['access_token']
 
@@ -171,9 +192,11 @@ def sleep():
     if fitbit_id == 'no_fitbit':
         warning = WARNING
 
-        date = pd.Timestamp('2016-04-17')
-        
-        hours_slept = np.round(700 / 60, 2)
+        date_str = request.args.get('date', '2016-04-17')
+        try:
+            date = pd.Timestamp(datetime.datetime.strptime(date_str, "%Y-%m-%d").date())
+        except:
+            date = pd.Timestamp('2016-04-17')
 
         if DB_PATH.startswith('sqlite'):
             daily_sleep = pd.read_csv('data/fitbit_apr/sleepDay_merged.csv')
@@ -181,8 +204,20 @@ def sleep():
             daily_sleep = pd.read_sql_table('daily_sleep', con=engine)
         daily_sleep = daily_sleep.rename(columns={'SleepDay': 'Date', 'TotalMinutesAsleep': 'Total Minutes Asleep'})
         daily_sleep.Date = pd.to_datetime(daily_sleep.Date)
-        week_sleep = daily_sleep.loc[(daily_sleep.Id == daily_sleep.Id.unique()[0]) & (daily_sleep.Date < '2016-04-19')]
+        user_id = daily_sleep.Id.unique()[0]
+        user_sleep = daily_sleep.loc[daily_sleep.Id == user_id]
 
+        # compute hours slept on the chosen date
+        day_sleep = user_sleep.loc[user_sleep.Date.dt.date == date.date(), 'Total Minutes Asleep']
+        hours_slept = np.round(day_sleep.values[0] / 60, 2) if len(day_sleep) > 0 else 0
+
+        # filter week sleep (7 days ending on chosen date)
+        week_start = date - pd.Timedelta('7 days')
+        week_sleep = user_sleep.loc[
+            (user_sleep.Date >= week_start) &
+            (user_sleep.Date <= date)
+        ]
+        
     else:
         access_token = session['access_token']
 
@@ -258,7 +293,11 @@ def heart_rate():
     if fitbit_id == 'no_fitbit':
         warning = WARNING
 
-        date = datetime.date(2016, 4, 12)
+        date_str = request.args.get('date', '2016-04-12')
+        try:
+            date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        except:
+            date = datetime.date(2016, 4, 12)
 
         if DB_PATH.startswith('sqlite'):
             heart_data = pd.read_csv('data/fitbit_apr/heartrate_seconds_merged.csv')
@@ -266,8 +305,14 @@ def heart_rate():
             heart_data = pd.read_sql_table('heart_data', con=engine)
         heart_data = heart_data.rename(columns={'Value': 'Heart Rate'})
         heart_data.Time = pd.to_datetime(heart_data.Time)
-        day_heart = heart_data.loc[(heart_data.Id == heart_data.Id.unique()[0]) & (heart_data.Time < '2016-04-13')]
-
+        user_id = heart_data.Id.unique()[0]
+        next_date = date + datetime.timedelta(days=1)
+        day_heart = heart_data.loc[
+            (heart_data.Id == user_id) &
+            (heart_data.Time >= str(date)) &
+            (heart_data.Time < str(next_date))
+        ]
+        
     else:
         access_token = session['access_token']
         

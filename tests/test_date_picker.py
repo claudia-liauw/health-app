@@ -2,7 +2,7 @@
 
 
 class TestStepsDatePicker:
-    """Date picker on the steps page (Fitbit user only — no-Fitbit ignores it)."""
+    """Date picker on the steps page."""
 
     def test_default_date_loads(self, fitbit_client, mock_fitbit_api):
         """Steps page loads with today's date when no date param is given."""
@@ -30,13 +30,33 @@ class TestStepsDatePicker:
         assert resp.status_code == 200
         assert b"2099-01-01" not in resp.data
 
-    def test_no_fitbit_date_picker_ignored(self, no_fitbit_client):
-        """No-Fitbit user always sees the demo date regardless of ?date param."""
-        resp = no_fitbit_client.get("/?date=2025-01-15", follow_redirects=True)
+    # -- No-Fitbit date picker tests --
+
+    def test_no_fitbit_default_date(self, no_fitbit_client):
+        """No-Fitbit user sees the default demo date when no param given."""
+        resp = no_fitbit_client.get("/", follow_redirects=True)
         assert resp.status_code == 200
-        # Should show the hardcoded demo date, not the requested one
         assert b"2016-04-12" in resp.data
         assert b"13162" in resp.data
+
+    def test_no_fitbit_change_date(self, no_fitbit_client):
+        """No-Fitbit user can change the date and see different data."""
+        resp = no_fitbit_client.get("/?date=2016-04-13", follow_redirects=True)
+        assert resp.status_code == 200
+        assert b"2016-04-13" in resp.data
+        # Should show steps for Apr 13 (10500), not the default (13162)
+        assert b"10500" in resp.data
+
+    def test_no_fitbit_invalid_date_falls_back(self, no_fitbit_client):
+        """No-Fitbit user with invalid date falls back to the default."""
+        resp = no_fitbit_client.get("/?date=not-a-date", follow_redirects=True)
+        assert resp.status_code == 200
+        assert b"2016-04-12" in resp.data
+
+    def test_no_fitbit_date_with_no_data(self, no_fitbit_client):
+        """No-Fitbit user with a date outside CSV range sees 0 steps."""
+        resp = no_fitbit_client.get("/?date=2020-01-01", follow_redirects=True)
+        assert resp.status_code == 200
 
 
 class TestSleepDatePicker:
@@ -52,8 +72,23 @@ class TestSleepDatePicker:
         resp = fitbit_client.get("/sleep?date=bad", follow_redirects=True)
         assert resp.status_code == 200
 
-    def test_no_fitbit_shows_demo_date(self, no_fitbit_client):
-        resp = no_fitbit_client.get("/sleep?date=2025-01-15", follow_redirects=True)
+    # -- No-Fitbit date picker tests --
+
+    def test_no_fitbit_default_date(self, no_fitbit_client):
+        """No-Fitbit user sees the default demo date when no param given."""
+        resp = no_fitbit_client.get("/sleep", follow_redirects=True)
+        assert resp.status_code == 200
+        assert b"2016-04-17" in resp.data
+
+    def test_no_fitbit_change_date(self, no_fitbit_client):
+        """No-Fitbit user can change the date and see different sleep data."""
+        resp = no_fitbit_client.get("/sleep?date=2016-04-15", follow_redirects=True)
+        assert resp.status_code == 200
+        assert b"2016-04-15" in resp.data
+
+    def test_no_fitbit_invalid_date_falls_back(self, no_fitbit_client):
+        """No-Fitbit user with invalid date falls back to the default."""
+        resp = no_fitbit_client.get("/sleep?date=bad", follow_redirects=True)
         assert resp.status_code == 200
         assert b"2016-04-17" in resp.data
 
@@ -78,7 +113,22 @@ class TestHeartDatePicker:
         resp = fitbit_client.get("/heart-rate?date=xyz", follow_redirects=True)
         assert resp.status_code == 200
 
-    def test_no_fitbit_shows_demo_date(self, no_fitbit_client):
-        resp = no_fitbit_client.get("/heart-rate?date=2025-01-15", follow_redirects=True)
+    # -- No-Fitbit date picker tests --
+
+    def test_no_fitbit_default_date(self, no_fitbit_client):
+        """No-Fitbit user sees the default demo date when no param given."""
+        resp = no_fitbit_client.get("/heart-rate", follow_redirects=True)
+        assert resp.status_code == 200
+        assert b"2016-04-12" in resp.data
+
+    def test_no_fitbit_change_date(self, no_fitbit_client):
+        """No-Fitbit user can change the date and see different heart data."""
+        resp = no_fitbit_client.get("/heart-rate?date=2016-04-12", follow_redirects=True)
+        assert resp.status_code == 200
+        assert b"2016-04-12" in resp.data
+
+    def test_no_fitbit_invalid_date_falls_back(self, no_fitbit_client):
+        """No-Fitbit user with invalid date falls back to the default."""
+        resp = no_fitbit_client.get("/heart-rate?date=xyz", follow_redirects=True)
         assert resp.status_code == 200
         assert b"2016-04-12" in resp.data
