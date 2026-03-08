@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, session, redirect, flash
+from flask import Flask, request, render_template, session, redirect, flash, jsonify
 from flask_session import Session
 import os
 import numpy as np
@@ -6,6 +6,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from src.utils import *
+from src.llm_service import chat as llm_chat
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
 import urllib.parse
@@ -538,6 +539,47 @@ def callback():
     session['access_token'] = response.json()['access_token']
     session['fitbit_id'] = response.json()['user_id']
     return redirect("/")
+
+# ── Chat API ────────────────────────────────────────────────────────────────
+
+@app.route("/chat", methods=["POST"])
+@login_required
+def chat_endpoint():
+    """JSON endpoint for the AI chat sidebar."""
+    data = request.get_json(silent=True) or {}
+    user_message = (data.get("message") or "").strip()
+
+    if not user_message:
+        return jsonify({"error": "Message cannot be empty."}), 400
+
+    if "chat_history" not in session:
+        session["chat_history"] = []
+
+    try:
+        response_text = llm_chat(session["chat_history"], user_message)
+
+        # Keep last 20 messages to limit session size
+        session["chat_history"].append({"role": "user", "content": user_message})
+        session["chat_history"].append({"role": "assistant", "content": response_text})
+        session["chat_history"] = session["chat_history"][-20:]
+        session.modified = True
+
+        return jsonify({"response": response_text})
+
+    except EnvironmentError as e:
+        return jsonify({"error": str(e)}), 503
+    except Exception as e:
+        return jsonify({"error": f"Something went wrong: {str(e)}"}), 500
+
+
+@app.route("/chat/clear", methods=["POST"])
+@login_required
+def chat_clear():
+    """Clear the chat history."""
+    session["chat_history"] = []
+    session.modified = True
+    return jsonify({"status": "ok"})
+
 
 if not os.environ.get('KOYEB'):
     if __name__ == '__main__': 

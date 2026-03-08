@@ -35,3 +35,22 @@ table td {
 tbody tr:nth-of-type(odd) {
     background-color: rgb(179, 208, 255, 0.3)
 }
+
+/* Chat sidebar */
+#chatToggle {
+    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 1040;
+    width: 3rem; height: 3rem; border-radius: 50%;
+    font-size: 1.3rem; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+#chatSidebar { width: 360px; max-width: 90vw; }
+.chat-msg { display: flex; margin-bottom: .5rem; }
+.chat-msg.user { justify-content: flex-end; }
+.chat-msg.bot { justify-content: flex-start; }
+.bubble { max-width: 85%; padding: .45rem .7rem; border-radius: .8rem; font-size: .875rem; line-height: 1.4; word-wrap: break-word; }
+.user-bubble { background: #198754; color: #fff; border-bottom-right-radius: .15rem; }
+.bot-bubble { background: #f0f0f0; color: #212529; border-bottom-left-radius: .15rem; }
+.dots span { animation: blink 1.4s infinite; font-size: 1.2rem; }
+.dots span:nth-child(2) { animation-delay: .2s; }
+.dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
