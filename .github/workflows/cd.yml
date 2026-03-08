@@ -18,6 +18,8 @@ jobs:
         with:
           app-name: fellow-korry-claudia-hobby-a63e6d9c
           service-name: health-app
+          service-instance-type: free
+          service-regions: was
           service-ports: "5000:http"
           service-routes: "/:5000"
           git-builder: docker
