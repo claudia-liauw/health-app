@@ -24,3 +24,4 @@ jobs:
           service-routes: "/:5000"
           git-builder: docker
           git-docker-dockerfile: Dockerfile
+          git-branch: master
