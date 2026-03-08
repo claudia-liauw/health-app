@@ -1,16 +1,31 @@
 # Health is Wealth
 #### Video Demo:  [https://youtu.be/hkL0urMsANU](https://youtu.be/hkL0urMsANU)
 #### Description:
-A health tracker app for steps, sleep and heart rate with goal tracking for steps and sleep and anomaly detection for heart rate. Integrates with Fitbit API to retrieve data.
+A health tracker app for steps, sleep and heart rate with goal tracking for steps and sleep and anomaly detection (currently inactive) for heart rate. Integrates with Fitbit API to retrieve data. Includes a built-in AI chat sidebar for health and activity questions.
 
 ## How to run
 Website: [fellow-korry-claudia-hobby-a63e6d9c.koyeb.app](https://fellow-korry-claudia-hobby-a63e6d9c.koyeb.app/)
 
-Does not include anomaly detection feature due to size limitations. To run with this feature, switch to branch `pre-deploy` and run locally:
+## Dev instructions (local)
+Set redirect URL on Fitbit to `http://localhost:5000`.
+
+To use chat feature, set `GITHUB_TOKEN` in `.env`.
+
+* Flask
+```
+uv sync
+uv run flask run
+```
+
+* Docker (note: `localhost` works, `0.0.0.0` does not work)
 ```
 docker compose up --build
 ```
-Note: This will not work unless the redirect URL is updated within `app.py` and on the Fitbit app manager.
+
+Tests:
+```
+uv run pytest
+```
 
 ## Database
 * Users table: username and hash
@@ -51,7 +66,7 @@ Fitbit does not support automatic retrieval of 7 day data for sleep. The data is
 ### Heart Rate
 Features are similar to steps but there are no goals.
 
-The chosen date is stored in Session so that anomaly detection will use the same date.
+The chosen date is stored in Session.
 
 A dataframe is constructed for heart rate on the chosen date. Plotly graphs are shown displaying heart rate on the chosen date and the resting heart rate for the past 7 days. When resting heart rate is not available, it is set to 0.
 
