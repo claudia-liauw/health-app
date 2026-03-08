@@ -500,7 +500,7 @@ def profile():
                                sleep_goal=ori_sleep_goal)
 
 CLIENT_ID = '23PQH4'
-REDIRECT_URL = os.environ.get('REDIRECT_URL', 'http://localhost:8000/callback')
+REDIRECT_URL = os.environ.get('REDIRECT_URL', 'http://localhost:5000/callback')
 
 @app.route("/authenticate")
 @login_required
