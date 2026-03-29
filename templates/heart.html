@@ -14,17 +14,21 @@
 
     <h1 class="mb-4">Heart Rate Monitor</h1>
 
-    <div class="card mb-4">
-        <h3 class="mb-3">Select Date</h3>
-        <form action="/heart-rate" method="get" class="row g-3 align-items-end">
-            <div class="col-auto">
-                <label for="dateInput" class="form-label">Date</label>
-                <input autocomplete="off" class="form-control" id="dateInput" name="date" type="date" value="{{ date }}">
+    <div class="row mb-4 justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="card h-100">
+                <h3 class="mb-3">Select Date</h3>
+                <form action="/heart-rate" method="get" class="row g-3 align-items-end">
+                    <div class="col-auto">
+                        <label for="dateInput" class="form-label">Date</label>
+                        <input autocomplete="off" class="form-control" id="dateInput" name="date" type="date" value="{{ date }}">
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary" type="submit">Display</button>
+                    </div>
+                </form>
             </div>
-            <div class="col-auto">
-                <button class="btn btn-primary" type="submit">Display</button>
-            </div>
-        </form>
+        </div>
     </div>
 
     <div class="card mb-4">
