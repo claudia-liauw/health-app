@@ -14,31 +14,28 @@
 
     <h1 class="mb-4">Sleep Tracking</h1>
 
-    <div class="row mb-4">
-        <div class="col-md-6 col-lg-4 mb-3">
-            <div class="metric-card">
+    <div class="row mb-4 g-3 align-items-stretch">
+        <div class="col-md-6 col-lg-5">
+            <div class="metric-card h-100">
                 <div class="metric-value">{{ hours_slept }}</div>
                 <div class="metric-label">Hours Slept{{ sleep_goal }}</div>
+                <div class="mt-2">{{ target|safe }}</div>
             </div>
         </div>
-        <div class="col-md-6 col-lg-4 mb-3">
-            <div class="metric-card">
-                {{ target|safe }}
+        <div class="col-md-6 col-lg-7">
+            <div class="card h-100">
+                <h3 class="mb-3">Select Date</h3>
+                <form action="/sleep" method="get" class="row g-3 align-items-end">
+                    <div class="col-auto">
+                        <label for="dateInput" class="form-label">Date</label>
+                        <input autocomplete="off" class="form-control" id="dateInput" name="date" type="date" value="{{ date }}">
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary" type="submit">Display</button>
+                    </div>
+                </form>
             </div>
         </div>
-    </div>
-
-    <div class="card mb-4">
-        <h3 class="mb-3">Select Date</h3>
-        <form action="/sleep" method="get" class="row g-3 align-items-end">
-            <div class="col-auto">
-                <label for="dateInput" class="form-label">Date</label>
-                <input autocomplete="off" class="form-control" id="dateInput" name="date" type="date" value="{{ date }}">
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-primary" type="submit">Display</button>
-            </div>
-        </form>
     </div>
 
     <div class="card">
