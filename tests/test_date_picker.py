@@ -65,7 +65,7 @@ class TestSleepDatePicker:
     def test_valid_past_date(self, fitbit_client, mock_fitbit_api):
         resp = fitbit_client.get("/sleep?date=2025-01-15", follow_redirects=True)
         assert resp.status_code == 200
-        assert b"Hours slept" in resp.data
+        assert b"Hours Slept" in resp.data
         assert b"2025-01-15" in resp.data
 
     def test_invalid_date_does_not_crash(self, fitbit_client, mock_fitbit_api):

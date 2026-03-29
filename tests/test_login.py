@@ -23,7 +23,7 @@ class TestNoFitbitLogin:
     def test_sleep_page_loads(self, no_fitbit_client):
         resp = no_fitbit_client.get("/sleep", follow_redirects=True)
         assert resp.status_code == 200
-        assert b"Hours slept" in resp.data
+        assert b"Hours Slept" in resp.data
 
     def test_heart_page_loads(self, no_fitbit_client):
         resp = no_fitbit_client.get("/heart-rate", follow_redirects=True)
@@ -54,7 +54,7 @@ class TestFitbitLogin:
     def test_sleep_loads_after_oauth(self, fitbit_client, mock_fitbit_api):
         resp = fitbit_client.get("/sleep", follow_redirects=True)
         assert resp.status_code == 200
-        assert b"Hours slept" in resp.data
+        assert b"Hours Slept" in resp.data
 
     def test_heart_loads_after_oauth(self, fitbit_client, mock_fitbit_api):
         resp = fitbit_client.get("/heart-rate", follow_redirects=True)
