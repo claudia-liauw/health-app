@@ -5,22 +5,42 @@
 {% endblock %}
 
 {% block main %}
-    <form action="/register" method="post">
-        <div class="mb-3">
-            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="username" placeholder="Username" type="text">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4">
+            <div class="card">
+                <h2 class="mb-4">Create Account</h2>
+                {% if invalid %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ invalid }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endif %}
+                <form action="/register" method="post">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input autocomplete="off" autofocus class="form-control" id="username" name="username" placeholder="Choose a username" type="text" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input class="form-control" id="password" name="password" placeholder="Create a strong password" type="password" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="confirmation" class="form-label">Confirm Password</label>
+                        <input class="form-control" id="confirmation" name="confirmation" placeholder="Confirm your password" type="password" required>
+                    </div>
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" id="fitbit" name="fitbit" type="checkbox" checked>
+                            <label class="form-check-label" for="fitbit">I have a Fitbit account</label>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit">Create Account</button>
+                </form>
+                <hr class="my-4">
+                <p class="text-center mb-0">
+                    Already have an account? <a href="/login">Log in here</a>
+                </p>
+            </div>
         </div>
-        <div class="mb-3">
-            <input class="form-control mx-auto w-auto" name="password" placeholder="Password" type="password">
-        </div>
-        <div class="mb-3">
-            <input class="form-control mx-auto w-auto" name="confirmation" placeholder="Confirm Password" type="password">
-        </div>
-        <div class="mb-3 form-switch">
-            <input class="form-check-input" name="fitbit" type="checkbox" id="fitbit" checked>
-            <label class="form-check-label" for="fitbit"></label>I have a Fitbit account</label>
-        </div>
-        <button class="btn btn-primary" type="submit">Register</button>
-    </form>
-    <br>
-    <p>{{ invalid }}</p>
+    </div>
 {% endblock %}

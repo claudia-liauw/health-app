@@ -150,13 +150,16 @@ def steps():
     if step_goal == 'Create one':
         target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
         step_goal_fmt = ''
+        step_goal_status = 'no-goal'
     else:
         step_goal_fmt = '/' + str(step_goal)
         step_goal = int(step_goal)
         if int(total_steps) >= step_goal:
             target = '<p>Target reached!</p>'
+            step_goal_status = 'reached'
         else:
             target = '<p>Target not yet reached.</p>'
+            step_goal_status = 'not-reached'
 
     # display steps by hour
     hourly_fig = px.bar(hourly_steps, x='Hour', y='Steps')
@@ -176,6 +179,7 @@ def steps():
                            warning=warning,
                            steps=total_steps,
                            step_goal=step_goal_fmt,
+                           step_goal_status=step_goal_status,
                            target=target,
                            date=date,
                            hourly_fig=hourly_fig.to_html(full_html=False),
@@ -254,13 +258,16 @@ def sleep():
     if sleep_goal == 'Create one':
         target = '<p>No goal set. <a href="/profile">Create one!</a></p>'
         sleep_goal_fmt = ''
+        sleep_goal_status = 'no-goal'
     else:
         sleep_goal_fmt = '/' + str(sleep_goal) + 'h'
         sleep_goal = float(sleep_goal)
         if hours_slept >= sleep_goal:
             target = '<p>Sleep target reached!</p>'
+            sleep_goal_status = 'reached'
         else:
             target = '<p>Sleep target not reached.</p>'
+            sleep_goal_status = 'not-reached'
     
     # display week sleep and whether target has been reached
     if sleep_goal == 'Create one':
@@ -278,6 +285,7 @@ def sleep():
                            warning=warning,
                            hours_slept=hours_slept,
                            sleep_goal=sleep_goal_fmt,
+                           sleep_goal_status=sleep_goal_status,
                            target=target,
                            date=str(date.date()),
                            fig=fig.to_html(full_html=False))
