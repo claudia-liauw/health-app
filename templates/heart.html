@@ -5,32 +5,62 @@
 {% endblock %}
 
 {% block main %}
-    <p>{{ warning }}</p>
-    <form action="/heart-rate" method="get">
-        <div class="mb-3">
-            <input autocomplete="off" class="form-control mx-auto w-auto" name="date" type="date" value="{{ date }}"">
+    {% if warning %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>ℹ️ Notice:</strong> {{ warning }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-        <button class="btn btn-primary" type="submit">Display</button>
-    </form>
-    {{ day_fig|safe }}
-    {{ week_fig|safe }}
-    <br>
-    <br>
-    {% if data_exists %}
-        <p>Note: The below feature has been disabled due to size limitations.</p>
-        <form action="/heart-rate" method="post">
-            <div class="mb-3">
-                <input autocomplete="off" class="form-control mx-auto w-auto" name="thresh" type="number" 
-                placeholder="Threshold (Default: 5)" min=1>
-            </div>
-            <button class="btn btn-primary" type="submit">Generate Anomaly Report</button>
-        </form>
     {% endif %}
-    <br>
+
+    <h1 class="mb-4">Heart Rate Monitor</h1>
+
+    <div class="card mb-4">
+        <h3 class="mb-3">Select Date</h3>
+        <form action="/heart-rate" method="get" class="row g-3 align-items-end">
+            <div class="col-auto">
+                <label for="dateInput" class="form-label">Date</label>
+                <input autocomplete="off" class="form-control" id="dateInput" name="date" type="date" value="{{ date }}">
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" type="submit">Display</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card mb-4">
+        <h3 class="mb-3">Daily Heart Rate</h3>
+        {{ day_fig|safe }}
+    </div>
+
+    <div class="card mb-4">
+        <h3 class="mb-3">Weekly Resting Heart Rate</h3>
+        {{ week_fig|safe }}
+    </div>
+
+    {% if data_exists %}
+        <div class="card mb-4">
+            <h3 class="mb-3">Anomaly Detection</h3>
+            <p class="text-muted mb-4">Note: This feature has been temporarily disabled due to size limitations.</p>
+            <form action="/heart-rate" method="post" class="row g-3 align-items-end">
+                <div class="col-auto">
+                    <label for="threshInput" class="form-label">Anomaly Threshold</label>
+                    <input autocomplete="off" class="form-control" id="threshInput" name="thresh" type="number" 
+                        placeholder="Default: 5" min="1" value="{{ thresh }}">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-secondary" type="submit">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    {% endif %}
+
     {% if tables %}
-        <p>Anomaly Threshold: {{ thresh }}</p>
-        {% for table in tables %}
-            {{ table|safe }}
-        {% endfor %}
+        <div class="card">
+            <h3 class="mb-3">Anomaly Report</h3>
+            <p class="text-muted mb-3">Threshold: <strong>{{ thresh }}</strong></p>
+            {% for table in tables %}
+                {{ table|safe }}
+            {% endfor %}
+        </div>
     {% endif %}
 {% endblock %}

@@ -5,18 +5,30 @@
 {% endblock %}
 
 {% block main %}
-    <p>Hello, {{ username }}</p>
-    <form action="/profile" method="post">
-        <p>Step Goal</p>
-        <div class="mb-3">
-            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="step" 
-            placeholder="{{ step_goal }}" value="{{ step_goal }}" type="number" min=0>
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card">
+                <h2 class="mb-4">Your Profile</h2>
+                <p class="text-muted mb-4">Welcome, <strong>{{ username }}</strong></p>
+                
+                <form action="/profile" method="post">
+                    <div class="mb-4">
+                        <label for="step" class="form-label">Daily Step Goal</label>
+                        <input autocomplete="off" autofocus class="form-control" id="step" name="step" 
+                            placeholder="Enter your daily step goal" value="{{ step_goal }}" type="number" min="0">
+                        <small class="text-muted">Leave empty to create/reset goal</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="sleep" class="form-label">Daily Sleep Goal (hours)</label>
+                        <input class="form-control" id="sleep" name="sleep" 
+                            placeholder="Enter your daily sleep goal in hours" value="{{ sleep_goal }}" type="number" min="0" step="0.1">
+                        <small class="text-muted">Leave empty to create/reset goal</small>
+                    </div>
+                    
+                    <button class="btn btn-primary w-100" type="submit">Save Goals</button>
+                </form>
+            </div>
         </div>
-        <p>Sleep Goal (h)</p>
-        <div class="mb-3">
-            <input class="form-control mx-auto w-auto" name="sleep" 
-            placeholder="{{ sleep_goal }}" value="{{ sleep_goal }}" type="number" min=0 step=0.1>
-        </div>
-        <button class="btn btn-primary" type="submit">Save</button>
-    </form>
+    </div>
 {% endblock %}

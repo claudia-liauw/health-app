@@ -5,15 +5,49 @@
 {% endblock %}
 
 {% block main %}
-    <p>{{ warning }}</p>
-    <p>Today's Steps: {{ steps }}{{ step_goal }}</p>
-    {{ target|safe }}
-    <form action="/" method="get">
-        <div class="mb-3">
-            <input autocomplete="off" class="form-control mx-auto w-auto" name="date" type="date" value="{{ date }}"">
+    {% if warning %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>ℹ️ Notice:</strong> {{ warning }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-        <button class="btn btn-primary" type="submit">Display</button>
-    </form>
-    {{ hourly_fig|safe }}
-    {{ daily_fig|safe }}
+    {% endif %}
+
+    <h1 class="mb-4">Daily Steps</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ steps }}</div>
+                <div class="metric-label">Steps{{ step_goal }}</div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="metric-card">
+                {{ target|safe }}
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <h3 class="mb-3">Select Date</h3>
+        <form action="/" method="get" class="row g-3 align-items-end">
+            <div class="col-auto">
+                <label for="dateInput" class="form-label">Date</label>
+                <input autocomplete="off" class="form-control" id="dateInput" name="date" type="date" value="{{ date }}">
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" type="submit">Display</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card mb-4">
+        <h3 class="mb-3">Hourly Activity</h3>
+        {{ hourly_fig|safe }}
+    </div>
+
+    <div class="card">
+        <h3 class="mb-3">Weekly Trend</h3>
+        {{ daily_fig|safe }}
+    </div>
 {% endblock %}

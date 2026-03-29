@@ -22,7 +22,7 @@
 
     <body>
 
-        <nav class="navbar bg-dark navbar-expand-md">
+        <nav class="navbar navbar-expand-md">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/"><span class="green">Health</span><span class="white">is</span><span class="yellow">Wealth</span></a>
                 <button aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler" data-bs-target="#navbar" data-bs-toggle="collapse" type="button">
@@ -57,34 +57,32 @@
             </header>
         {% endif %}
 
-        <main class="container py-5 text-center">
+        <main class="container-fluid py-4">
             {% block main %}{% endblock %}
         </main>
 
         {% if session["user_id"] %}
         <!-- Chat toggle -->
-        <button id="chatToggle" class="btn btn-success" data-bs-toggle="offcanvas"
+        <button id="chatToggle" class="btn btn-primary" data-bs-toggle="offcanvas"
                 data-bs-target="#chatSidebar" title="Chat with AI">💬</button>
 
         <!-- Chat sidebar -->
         <div class="offcanvas offcanvas-end" id="chatSidebar" tabindex="-1"
              data-bs-backdrop="false" data-bs-scroll="true">
-            <div class="offcanvas-header border-bottom">
+            <div class="offcanvas-header">
                 <h5 class="offcanvas-title">Health Assistant</h5>
                 <div>
                     <button id="chatClear" class="btn btn-sm btn-outline-secondary me-2" title="Clear">🗑️</button>
                     <button class="btn-close" data-bs-dismiss="offcanvas"></button>
                 </div>
             </div>
-            <div class="offcanvas-body d-flex flex-column p-0">
-                <div id="chatMessages" class="flex-grow-1 overflow-auto p-3">
-                    <div class="chat-msg bot"><div class="bubble bot-bubble">Hi! Ask me anything about your health data.</div></div>
-                </div>
-                <form id="chatForm" class="border-top p-3 d-flex gap-2">
-                    <input id="chatInput" class="form-control form-control-sm" placeholder="Type a message…" autocomplete="off">
-                    <button class="btn btn-success btn-sm px-3" id="chatSend">Send</button>
-                </form>
+            <div class="chat-container" id="chatMessages">
+                <div class="chat-msg bot"><div class="bubble bot-bubble">Hi! Ask me anything about your health data.</div></div>
             </div>
+            <form id="chatForm" class="chat-input-group">
+                <input id="chatInput" class="form-control form-control-sm" placeholder="Type a message…" autocomplete="off">
+                <button class="btn btn-primary btn-sm px-3" id="chatSend" type="submit">Send</button>
+            </form>
         </div>
 
         <script>
