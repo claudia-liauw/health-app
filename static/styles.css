@@ -341,11 +341,15 @@ tbody tr:nth-of-type(odd) {
 
 /* --- Metric Cards & Stats Display --- */
 .metric-card {
-  background: linear-gradient(135deg, var(--color-primary-light), var(--color-white));
+  --metric-accent: var(--color-primary);
+  --metric-bg-start: var(--color-primary-light);
+  --metric-bg-end: var(--color-white);
+  --metric-border: var(--color-primary-light);
+  background: linear-gradient(135deg, var(--metric-bg-start), var(--metric-bg-end));
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
   text-align: center;
-  border: 1px solid var(--color-primary-light);
+  border: 1px solid var(--metric-border);
   box-shadow: var(--shadow-md);
   transition: var(--transition);
 }
@@ -353,16 +357,47 @@ tbody tr:nth-of-type(odd) {
 .metric-card:hover {
   box-shadow: var(--shadow-lg);
   transform: translateY(-4px);
-  border-color: var(--color-primary);
+  border-color: var(--metric-accent);
 }
 
 .metric-value {
   font-size: 3rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--metric-accent);
   line-height: 1;
   margin-bottom: var(--space-sm);
   letter-spacing: -1px;
+}
+
+.metric-card p {
+  margin-bottom: 0;
+  color: var(--color-text);
+}
+
+.metric-card a {
+  color: var(--metric-accent);
+  font-weight: 600;
+}
+
+.metric-card-reached {
+  --metric-accent: #10B981;
+  --metric-bg-start: #D1FAE5;
+  --metric-bg-end: #FFFFFF;
+  --metric-border: #A7F3D0;
+}
+
+.metric-card-not-reached {
+  --metric-accent: #F87171;
+  --metric-bg-start: #FEE2E2;
+  --metric-bg-end: #FFFFFF;
+  --metric-border: #FECACA;
+}
+
+.metric-card-no-goal {
+  --metric-accent: #636EFA;
+  --metric-bg-start: #E8ECFF;
+  --metric-bg-end: #FFFFFF;
+  --metric-border: #C7D2FE;
 }
 
 .metric-label {
