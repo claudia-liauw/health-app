@@ -55,6 +55,11 @@ with engine.connect() as con:
 # heart_data.to_sql('heart_data', engine, index=False)
 
 
+@app.route("/")
+def index():
+    return render_template("about.html")
+
+
 @app.route("/steps")
 @login_required
 @auth_required

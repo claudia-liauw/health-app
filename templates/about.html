@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    About
+{% endblock %}
+
+{% block main %}
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <h2 class="mb-4">About</h2>
+                <p>
+                    A health tracker app for steps, sleep and heart rate with goal tracking
+                    for steps and sleep and anomaly detection (currently inactive) for heart
+                    rate. Integrates with Fitbit API to retrieve data. Includes a built-in
+                    AI chat sidebar for health and activity questions.
+                </p>
+                <p>
+                    <a class="btn btn-primary" href="https://github.com/claudia-liauw/health-app"
+                       target="_blank" rel="noopener noreferrer">View on GitHub</a>
+                </p>
+                <p class="text-muted mb-0">This is not medical advice.</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
