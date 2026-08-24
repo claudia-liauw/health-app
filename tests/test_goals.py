@@ -52,26 +52,26 @@ class TestGoalOnStepsPlot:
 
     def test_no_goal_shows_create_link(self, no_fitbit_client):
         """With default 'Create one', the steps page shows a link to set a goal."""
-        resp = no_fitbit_client.get("/", follow_redirects=True)
+        resp = no_fitbit_client.get("/steps", follow_redirects=True)
         assert b"No goal set" in resp.data
         assert b"/profile" in resp.data
 
     def test_step_goal_displayed_on_steps_page(self, no_fitbit_client):
         """After setting a goal, steps page shows it formatted as '/10000'."""
         no_fitbit_client.post("/profile", data={"step": "10000", "sleep": ""})
-        resp = no_fitbit_client.get("/", follow_redirects=True)
+        resp = no_fitbit_client.get("/steps", follow_redirects=True)
         assert b"/10000" in resp.data
 
     def test_target_reached_when_exceeded(self, no_fitbit_client):
         """Demo total steps (13162) exceed a goal of 5000 → 'Target reached!'."""
         no_fitbit_client.post("/profile", data={"step": "5000", "sleep": ""})
-        resp = no_fitbit_client.get("/", follow_redirects=True)
+        resp = no_fitbit_client.get("/steps", follow_redirects=True)
         assert b"Target reached!" in resp.data
 
     def test_target_not_reached(self, no_fitbit_client):
         """Demo total steps (13162) do not reach a goal of 20000."""
         no_fitbit_client.post("/profile", data={"step": "20000", "sleep": ""})
-        resp = no_fitbit_client.get("/", follow_redirects=True)
+        resp = no_fitbit_client.get("/steps", follow_redirects=True)
         assert b"Target not yet reached" in resp.data
 
 
@@ -108,7 +108,7 @@ class TestGoalOnFitbitPlot:
     def test_step_goal_with_fitbit(self, fitbit_client, mock_fitbit_api):
         """Fitbit user sees step goal on the steps page after setting it."""
         fitbit_client.post("/profile", data={"step": "5000", "sleep": ""})
-        resp = fitbit_client.get("/", follow_redirects=True)
+        resp = fitbit_client.get("/steps", follow_redirects=True)
         assert b"/5000" in resp.data
         # Mock returns 8500 total steps → target reached
         assert b"Target reached!" in resp.data
