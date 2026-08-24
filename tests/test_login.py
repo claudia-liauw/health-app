@@ -86,3 +86,35 @@ class TestLoginValidation:
         resp = no_fitbit_client.get("/steps")
         assert resp.status_code == 302
         assert "/login" in resp.headers["Location"]
+
+
+class TestRegister:
+    def test_fitbit_checkbox_unchecked_by_default(self, client):
+        resp = client.get("/register")
+        html = resp.data.decode()
+        assert 'id="fitbit"' in html
+        assert 'type="checkbox" checked' not in html
+
+    def test_disclaimer_text_present(self, client):
+        resp = client.get("/register")
+        assert b"Warning: Untested with other Fitbit devices" in resp.data
+
+    def test_register_without_fitbit_redirects_to_steps(self, client):
+        resp = client.post(
+            "/register",
+            data={
+                "username": "newuser",
+                "password": "secret",
+                "confirmation": "secret",
+            },
+        )
+        assert resp.status_code == 302
+        assert "/steps" in resp.headers["Location"]
+
+    def test_login_redirects_to_steps(self, client):
+        resp = client.post(
+            "/login",
+            data={"username": "testuser", "password": "testpass"},
+        )
+        assert resp.status_code == 302
+        assert "/steps" in resp.headers["Location"]

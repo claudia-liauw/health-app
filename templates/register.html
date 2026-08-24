@@ -30,12 +30,24 @@
                     </div>
                     <div class="mb-4">
                         <div class="form-check">
-                            <input class="form-check-input" id="fitbit" name="fitbit" type="checkbox" checked>
+                            <input class="form-check-input" id="fitbit" name="fitbit" type="checkbox">
                             <label class="form-check-label" for="fitbit">I have a Fitbit account</label>
+                        </div>
+                        <div class="alert alert-warning d-none mt-2 mb-0" id="fitbit-disclaimer" role="alert">
+                            Warning: Untested with other Fitbit devices
                         </div>
                     </div>
                     <button class="btn btn-primary w-100" type="submit">Create Account</button>
                 </form>
+                <script>
+                (function () {
+                    var box = document.getElementById("fitbit");
+                    var note = document.getElementById("fitbit-disclaimer");
+                    box.addEventListener("change", function () {
+                        note.classList.toggle("d-none", !box.checked);
+                    });
+                })();
+                </script>
                 <hr class="my-4">
                 <p class="text-center mb-0">
                     Already have an account? <a href="/login">Log in here</a>
