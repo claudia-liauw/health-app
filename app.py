@@ -56,6 +56,11 @@ with engine.connect() as con:
 
 
 @app.route("/")
+def index():
+    return render_template("about.html")
+
+
+@app.route("/steps")
 @login_required
 @auth_required
 def steps():
@@ -446,7 +451,7 @@ def register():
                            VALUES (:username, 'Create one', 'Create one')"""),
                            {"username": username})
                 db.commit()
-                return redirect("/")
+                return redirect("/steps")
             # If username already exists
             except:
                 return render_template("register.html", invalid="Username already exists!")
@@ -494,7 +499,7 @@ def login():
             session['fitbit_id'] = 'no_fitbit'
 
         # Redirect user to authenticate
-        return redirect("/")
+        return redirect("/steps")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -592,7 +597,7 @@ def callback():
                                    'code_verifier': session['auth_params']['code_verifier']})
     session['access_token'] = response.json()['access_token']
     session['fitbit_id'] = response.json()['user_id']
-    return redirect("/")
+    return redirect("/steps")
 
 # ── Chat API ────────────────────────────────────────────────────────────────
 

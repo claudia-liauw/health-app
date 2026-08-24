@@ -51,7 +51,7 @@ Verifies that both user types can log in and reach their respective dashboards.
 | Test | What it checks |
 |---|---|
 | **TestNoFitbitLogin** | |
-| `test_login_reaches_steps_dashboard` | After login, no-Fitbit user lands on `/` (steps page) with HTTP 200. |
+| `test_login_reaches_steps_dashboard` | After login, no-Fitbit user lands on `/steps` (steps page) with HTTP 200. |
 | `test_warning_shown` | The "WARNING: You are not connected to Fitbit…" banner is visible. |
 | `test_demo_steps_shown` | Demo total steps (13 162) appear on the page. |
 | `test_sleep_page_loads` | `/sleep` returns 200 with "Hours slept". |
@@ -66,7 +66,32 @@ Verifies that both user types can log in and reach their respective dashboards.
 | `test_nonexistent_user` | Non-existent username → same generic error. |
 | `test_empty_username` | Blank username → "Must provide username". |
 | `test_empty_password` | Blank password → "Must provide password". |
-| `test_logout_clears_session` | `GET /logout` clears session; next request redirects to `/login`. |
+| `test_logout_clears_session` | `GET /logout` clears session; `GET /steps` redirects to `/login`; `GET /` is public About. |
+| **TestRegister** | |
+| `test_fitbit_checkbox_unchecked_by_default` | Fitbit checkbox is present and not checked. |
+| `test_disclaimer_text_present` | Register HTML includes "Warning: Untested with other Fitbit devices". |
+| `test_register_without_fitbit_redirects_to_steps` | POST without `fitbit` redirects to `/steps`. |
+| `test_login_redirects_to_steps` | Successful login redirects to `/steps`. |
+
+---
+
+### `test_about.py` — About Home & Navbar
+
+Verifies that `/` is a public About page and that the navbar links to GitHub and `/steps`.
+
+| Test | What it checks |
+|---|---|
+| **TestAboutPage** | |
+| `test_logged_out_home_is_about` | Logged-out `GET /` returns 200 About (not a login redirect). |
+| `test_does_not_redirect_to_login` | `GET /` is 200 with no redirect. |
+| `test_describes_the_app` | About copy mentions steps, sleep, heart, Fitbit, and chat. |
+| `test_github_link` | GitHub repo URL appears on the page. |
+| `test_not_medical_advice` | Page includes "This is not medical advice." |
+| `test_logged_in_home_is_still_about` | Logged-in `GET /` is still About (not the steps dashboard). |
+| **TestNavbar** | |
+| `test_logged_out_nav_has_github` | Logged-out nav has GitHub link/icon. |
+| `test_logged_in_nav_steps_goes_to_steps` | Steps nav item links to `/steps`. |
+| `test_logged_in_nav_has_github` | Logged-in nav has GitHub link/icon. |
 
 ---
 

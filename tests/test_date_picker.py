@@ -6,13 +6,13 @@ class TestStepsDatePicker:
 
     def test_default_date_loads(self, fitbit_client, mock_fitbit_api):
         """Steps page loads with today's date when no date param is given."""
-        resp = fitbit_client.get("/", follow_redirects=True)
+        resp = fitbit_client.get("/steps", follow_redirects=True)
         assert resp.status_code == 200
         assert b"Steps" in resp.data
 
     def test_valid_past_date(self, fitbit_client, mock_fitbit_api):
         """Steps page loads successfully with a valid past date."""
-        resp = fitbit_client.get("/?date=2025-01-15", follow_redirects=True)
+        resp = fitbit_client.get("/steps?date=2025-01-15", follow_redirects=True)
         assert resp.status_code == 200
         assert b"Steps" in resp.data
         # The date value should appear in the date input
@@ -20,13 +20,13 @@ class TestStepsDatePicker:
 
     def test_invalid_date_does_not_crash(self, fitbit_client, mock_fitbit_api):
         """An invalid date string falls back to today — page still loads."""
-        resp = fitbit_client.get("/?date=not-a-date", follow_redirects=True)
+        resp = fitbit_client.get("/steps?date=not-a-date", follow_redirects=True)
         assert resp.status_code == 200
         assert b"Steps" in resp.data
 
     def test_future_date_clamped(self, fitbit_client, mock_fitbit_api):
         """A future date is clamped to today — page still loads."""
-        resp = fitbit_client.get("/?date=2099-01-01", follow_redirects=True)
+        resp = fitbit_client.get("/steps?date=2099-01-01", follow_redirects=True)
         assert resp.status_code == 200
         assert b"2099-01-01" not in resp.data
 
@@ -34,14 +34,14 @@ class TestStepsDatePicker:
 
     def test_no_fitbit_default_date(self, no_fitbit_client):
         """No-Fitbit user sees the default demo date when no param given."""
-        resp = no_fitbit_client.get("/", follow_redirects=True)
+        resp = no_fitbit_client.get("/steps", follow_redirects=True)
         assert resp.status_code == 200
         assert b"2016-04-12" in resp.data
         assert b"13162" in resp.data
 
     def test_no_fitbit_change_date(self, no_fitbit_client):
         """No-Fitbit user can change the date and see different data."""
-        resp = no_fitbit_client.get("/?date=2016-04-13", follow_redirects=True)
+        resp = no_fitbit_client.get("/steps?date=2016-04-13", follow_redirects=True)
         assert resp.status_code == 200
         assert b"2016-04-13" in resp.data
         # Should show steps for Apr 13 (10500), not the default (13162)
@@ -49,13 +49,13 @@ class TestStepsDatePicker:
 
     def test_no_fitbit_invalid_date_falls_back(self, no_fitbit_client):
         """No-Fitbit user with invalid date falls back to the default."""
-        resp = no_fitbit_client.get("/?date=not-a-date", follow_redirects=True)
+        resp = no_fitbit_client.get("/steps?date=not-a-date", follow_redirects=True)
         assert resp.status_code == 200
         assert b"2016-04-12" in resp.data
 
     def test_no_fitbit_date_with_no_data(self, no_fitbit_client):
         """No-Fitbit user with a date outside CSV range sees 0 steps."""
-        resp = no_fitbit_client.get("/?date=2020-01-01", follow_redirects=True)
+        resp = no_fitbit_client.get("/steps?date=2020-01-01", follow_redirects=True)
         assert resp.status_code == 200
 
 

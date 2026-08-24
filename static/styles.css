@@ -152,6 +152,11 @@ a:hover {
   background-color: var(--color-primary-light);
 }
 
+.nav-link .bi-github {
+  font-size: 1.15rem;
+  vertical-align: -0.1em;
+}
+
 .nav-link.active {
   color: var(--color-primary) !important;
   font-weight: 600;
