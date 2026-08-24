@@ -11,19 +11,28 @@ Set redirect URL on Fitbit to `http://localhost:5000/callback`.
 
 To use chat feature, set `GITHUB_TOKEN` in `.env`.
 
-* Flask
-```
+**Flask**
+
+```bash
 uv sync
 uv run flask run
 ```
 
-* Docker (note: `localhost` works, `0.0.0.0` does not work)
-```
+**Docker** (note: `localhost` works, `0.0.0.0` does not work)
+
+```bash
 docker compose up --build
 ```
 
-Tests:
+If above command doesn't update, try:
+
+```bash
+docker compose build --no-cache
 ```
+
+**Tests**
+
+```bash
 uv run pytest
 ```
 
